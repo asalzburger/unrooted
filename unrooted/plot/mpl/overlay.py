@@ -16,6 +16,8 @@ def overlay(
     labels: list[str] | None = None,
     **kwargs,
 ) -> tuple[MplAxes, MplAxes | None]:
+    if not hists or len(hists) == 0:
+        raise ValueError("hists must not be empty")
     if any(h.ndim != 1 for h in hists):
         raise ValueError("overlay only supports 1D histograms")
     if labels is not None and len(labels) != len(hists):
