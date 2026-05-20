@@ -12,11 +12,21 @@ dependencies = [
     "matplotlib",
 ]
 
+[project.urls]
+Homepage = "https://asalzburger.github.io/unrooted"
+Repository = "https://github.com/asalzburger/unrooted"
+Documentation = "https://asalzburger.github.io/unrooted"
+
 [project.optional-dependencies]
 dev = [
     "pytest",
     "ruff",
     "pyright",
+]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+    "pillow",
 ]
 
 [tool.hatch.build.targets.wheel]
