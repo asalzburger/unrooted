@@ -113,29 +113,3 @@ def _draw_ratio_panel(
 
     ax_ratio.axhline(1.0, color="black", linestyle="--", linewidth=0.8)
     ax_ratio.set_ylabel("Ratio")
-        ref_values = hists[0].values
-        ref_errors = hists[0].errors
-        edges = hists[0].axes[0].edges
-        centers = hists[0].axes[0].centers
-
-        for i, hist in enumerate(hists[1:], start=1):
-            color = colors[i % len(colors)]
-            with np.errstate(invalid="ignore", divide="ignore"):
-                r = np.where(ref_values != 0, hist.values / ref_values, np.nan)
-                sigma_r = np.where(
-                    ref_values != 0,
-                    np.sqrt(
-                        (hist.errors / ref_values) ** 2
-                        + (hist.values * ref_errors / ref_values**2) ** 2
-                    ),
-                    np.nan,
-                )
-            ax_ratio.stairs(r, edges, color=color)
-            ax_ratio.errorbar(
-                centers, r, yerr=sigma_r, fmt="none", color=color, capsize=2
-            )
-
-        ax_ratio.axhline(1.0, color="black", linestyle="--", linewidth=0.8)
-        ax_ratio.set_ylabel("Ratio")
-
-    return main_ax, ax_ratio

@@ -8,7 +8,7 @@ from typing import Literal
 class HistogramStyle:
     """Visual style for a single 1D histogram.
 
-    All ``*_color`` fields accept any matplotlib color spec (named string,
+    All ``*_color`` fields accept matplotlib-style color spec (named string,
     hex, or RGBA tuple).  ``None`` means "inherit the automatic cycle color".
     ``*_alpha`` fields are applied on top of whatever alpha is encoded in the
     color itself.
