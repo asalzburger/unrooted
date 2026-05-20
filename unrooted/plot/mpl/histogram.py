@@ -28,7 +28,8 @@ def plot(
             if kwargs:
                 unexpected = ", ".join(sorted(kwargs))
                 raise TypeError(
-                    f"plot() got unexpected keyword arguments for styled 1D histogram: {unexpected}"
+                    "plot() got unexpected keyword arguments"
+                    f" for styled 1D histogram: {unexpected}"
                 )
             return _plot_1d_styled(hist, ax, style)
         return _plot_1d(hist, ax, **kwargs)

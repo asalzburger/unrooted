@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from unrooted.core.axis import Axis
 from unrooted.core.histogram import Histogram
