@@ -11,6 +11,24 @@ from unrooted.core.histogram import Histogram
 
 
 def load(path: str | Path, key: str) -> Histogram:
+    """Load a ROOT histogram object as a :class:`~unrooted.core.Histogram`.
+
+    Supports ``TH1``, ``TH2``, and ``TProfile`` objects.  Bin values,
+    variances, overflow, and axis labels are all extracted automatically.
+
+    Args:
+        path: Path to the ``.root`` file.
+        key:  Histogram key inside the file, e.g. ``"hx"`` or ``"hx;1"``.
+              The cycle number (``";1"``) is stripped from the returned
+              histogram name.
+
+    Returns:
+        A :class:`~unrooted.core.Histogram` with ``values``, ``variances``,
+        ``overflow``, and one :class:`~unrooted.core.Axis` per dimension.
+
+    Raises:
+        KeyError: If *key* is not found in the file.
+    """
     with cast(Any, uproot.open(path)) as f:
         obj: Any = f[key]
         values = np.asarray(obj.values(flow=False))
