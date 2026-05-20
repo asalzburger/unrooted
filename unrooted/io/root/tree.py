@@ -14,54 +14,84 @@ from unrooted.core.histogram import Histogram
 def load_branch(
     path: str | Path,
     key: str,
-    branch: str,
+    x_branch: str,
+    y_branch: str | None = None,
     *,
     n_bins: int = 100,
     range: tuple[float, float] | None = None,  # noqa: A002
-    profile: bool = False,
     label: str = "",
 ) -> Histogram:
-    """Load a TTree branch as a 1D count or profile histogram.
+    """Load a TTree branch (or branch pair) as a 1-D count or profile histogram.
 
-    Scalar, ``std::vector<T>`` and ``std::vector<std::vector<T>>`` branch
-    types are all flattened to a 1D array before histogramming.
+    When called with only *x_branch*, every value in that branch is counted
+    into a 1-D histogram.  Scalar, ``std::vector<T>``, and
+    ``std::vector<std::vector<T>>`` branch types are all flattened first.
+
+    When *y_branch* is also given, returns a **profile histogram**: *x_branch*
+    drives the bin axis and in each x-bin the mean, standard error, and
+    spread (min/max) of the corresponding *y_branch* values are stored.  The
+    two branches are aligned with :func:`awkward.broadcast_arrays`, which
+    supports:
+
+    1. Trivial × Trivial — scalar × scalar, event-by-event pairing
+    2. Trivial × Vector — scalar × ``std::vector<T>`` (each scalar x is
+       broadcast to every element of the y-vector in the same event)
+    3. Trivial × Jagged — scalar × ``std::vector<std::vector<T>>``
+    4. Vector × Vector — same-shape ``std::vector<T>`` pairs, zipped per event
+    5. Vector × Jagged — ``std::vector<T>`` × ``std::vector<std::vector<T>>``
+       when the outer y-length matches x per event
+
+    Incompatible branch shapes raise a ``ValueError`` from awkward-array.
 
     Args:
-        path:    Path to the ROOT file.
-        key:     Tree name inside the file, e.g. ``"tree"`` or ``"jagged_tree"``.
-        branch:  Branch name, e.g. ``"x"`` or ``"xj"``.
-        n_bins:  Number of bins (default 100).
-        range:   ``(lo, hi)`` bin range.  Auto-detected from data if ``None``.
-        profile: If ``True`` return a profile histogram (per-bin mean ± SE,
-                 with ``spread_min``/``spread_max`` set to per-bin min/max).
-                 If ``False`` (default) return a count histogram.
-        label:   Axis label; defaults to the branch name.
+        path:     Path to the ROOT file.
+        key:      Tree name inside the file.
+        x_branch: Branch used for x-axis binning (and as the sole branch for
+                  count histograms).
+        y_branch: Branch whose values are profiled per x-bin.  When ``None``
+                  (default) a count histogram of *x_branch* is returned.
+        n_bins:   Number of bins (default 100).
+        range:    ``(lo, hi)`` bin range; auto-detected from *x_branch* data
+                  if ``None``.
+        label:    X-axis label; defaults to *x_branch*.
     """
     with cast(Any, uproot.open(path)) as f:
-        arr = f[key][branch].array(library="ak")
+        x_ak = f[key][x_branch].array(library="ak")
+        y_ak: Any = (
+            f[key][y_branch].array(library="ak") if y_branch is not None else None
+        )
 
-    data = np.asarray(ak.flatten(arr, axis=None), dtype=float)  # type: ignore[arg-type]
-    axis_label = label or branch
-
-    lo: float
-    hi: float
-    if range is not None:
-        lo, hi = range
-    else:
-        lo, hi = float(data.min()), float(data.max())
-        if lo == hi:
-            lo, hi = lo - 0.5, lo + 0.5
-
+    # Range is always derived from the original x values (before broadcasting).
+    x_orig = np.asarray(ak.flatten(x_ak, axis=None), dtype=float)  # type: ignore[arg-type]
+    lo, hi = _resolve_range(x_orig, range)
     edges = np.linspace(lo, hi, n_bins + 1)
+    axis_label = label or x_branch
 
-    if not profile:
-        return _count_histogram(data, edges, branch, axis_label)
-    return _profile_histogram(data, edges, branch, axis_label)
+    if y_ak is None or y_branch is None:
+        return _count_histogram(x_orig, edges, x_branch, axis_label)
+
+    # Broadcast x and y to a common shape, then flatten both in lockstep.
+    x_bc, y_bc = ak.broadcast_arrays(x_ak, y_ak)  # type: ignore[misc]
+    x_flat = np.asarray(ak.flatten(x_bc, axis=None), dtype=float)  # type: ignore[arg-type]
+    y_flat = np.asarray(ak.flatten(y_bc, axis=None), dtype=float)  # type: ignore[arg-type]
+    return _profile_histogram(x_flat, y_flat, edges, y_branch, axis_label)
 
 
 # ---------------------------------------------------------------------------
-# Internal builders
+# Internal helpers
 # ---------------------------------------------------------------------------
+
+
+def _resolve_range(
+    data: np.ndarray,
+    range_arg: tuple[float, float] | None,
+) -> tuple[float, float]:
+    if range_arg is not None:
+        return range_arg
+    lo, hi = float(data.min()), float(data.max())
+    if lo == hi:
+        lo, hi = lo - 0.5, lo + 0.5
+    return lo, hi
 
 
 def _count_histogram(
@@ -81,7 +111,8 @@ def _count_histogram(
 
 
 def _profile_histogram(
-    data: np.ndarray,
+    x_data: np.ndarray,
+    y_data: np.ndarray,
     edges: np.ndarray,
     name: str,
     label: str,
@@ -89,40 +120,36 @@ def _profile_histogram(
     n_bins = len(edges) - 1
     lo, hi = edges[0], edges[-1]
 
-    # Assign each value to a 0-based bin index.
-    # searchsorted on the inner edges gives the correct 0-based index for
-    # values in [lo, hi].  Values equal to `hi` land in the last bin.
-    in_range = (data >= lo) & (data <= hi)
-    data_valid = data[in_range]
-    idx = np.searchsorted(edges[1:], data_valid)          # 0 .. n_bins
+    # Keep only (x, y) pairs whose x falls within [lo, hi].
+    in_range = (x_data >= lo) & (x_data <= hi)
+    x_valid = x_data[in_range]
+    y_valid = y_data[in_range]
+
+    # searchsorted on inner edges → 0-based bin index; values equal to hi
+    # land in the last bin via clip.
+    idx = np.searchsorted(edges[1:], x_valid)
     idx = np.clip(idx, 0, n_bins - 1)
 
-    # Per-bin count and sum (for mean).
     counts = np.zeros(n_bins, dtype=np.intp)
     sums = np.zeros(n_bins)
     sum_sq = np.zeros(n_bins)
     np.add.at(counts, idx, 1)
-    np.add.at(sums, idx, data_valid)
-    np.add.at(sum_sq, idx, data_valid**2)
+    np.add.at(sums, idx, y_valid)
+    np.add.at(sum_sq, idx, y_valid**2)
 
-    # Per-bin min / max via ufunc.at.
     mins = np.full(n_bins, np.inf)
     maxs = np.full(n_bins, -np.inf)
-    np.minimum.at(mins, idx, data_valid)
-    np.maximum.at(maxs, idx, data_valid)
+    np.minimum.at(mins, idx, y_valid)
+    np.maximum.at(maxs, idx, y_valid)
 
-    # Finalise statistics.
     has_data = counts > 0
     means = np.where(has_data, sums / np.where(has_data, counts, 1), 0.0)
-    # Population variance: E[X²] - (E[X])²
     pop_var = np.where(
         has_data,
         sum_sq / np.where(has_data, counts, 1) - means**2,
         0.0,
     )
-    # Variance of the mean (SE²) = pop_var / n
     var_means = np.where(has_data, pop_var / np.where(has_data, counts, 1), 0.0)
-
     mins = np.where(has_data, mins, np.nan)
     maxs = np.where(has_data, maxs, np.nan)
 
