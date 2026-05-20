@@ -25,6 +25,11 @@ def plot(
         _, ax = plt.subplots()
     if hist.ndim == 1:
         if style is not None:
+            if kwargs:
+                unexpected = ", ".join(sorted(kwargs))
+                raise TypeError(
+                    f"plot() got unexpected keyword arguments for styled 1D histogram: {unexpected}"
+                )
             return _plot_1d_styled(hist, ax, style)
         return _plot_1d(hist, ax, **kwargs)
     if hist.ndim == 2:
