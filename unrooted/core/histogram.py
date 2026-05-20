@@ -15,6 +15,8 @@ class Histogram:
     name: str = ""
     title: str = ""
     overflow: np.ndarray | None = field(default=None)
+    spread_min: np.ndarray | None = field(default=None)
+    spread_max: np.ndarray | None = field(default=None)
 
     @property
     def ndim(self) -> int:

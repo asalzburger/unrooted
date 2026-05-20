@@ -1,8 +1,5 @@
 from pathlib import Path
 
-import numpy as np
-import pytest
-
 from unrooted.io.root.reader import load
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "root"
