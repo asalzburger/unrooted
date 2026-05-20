@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240">
+  <!-- Logo A: Histogram-Tree -->
+  <!-- Five bars in a Gaussian bell-curve arrangement -->
+  <!-- Bar 1 – steel gray (outermost left) -->
+  <rect x="17"  y="120" width="30" height="35"  fill="#525C62"/>
+  <!-- Bar 2 – sky blue -->
+  <rect x="51"  y="90"  width="30" height="65"  fill="#5B9BD5"/>
+  <!-- Bar 3 – deep navy (tallest, centre) -->
+  <rect x="85"  y="50"  width="30" height="105" fill="#1A4F8A"/>
+  <!-- Bar 4 – warm amber -->
+  <rect x="119" y="90"  width="30" height="65"  fill="#E8921A"/>
+  <!-- Bar 5 – sky blue (outermost right) -->
+  <rect x="153" y="115" width="30" height="40"  fill="#5B9BD5"/>
+
+  <!-- Baseline -->
+  <line x1="8" y1="155" x2="192" y2="155" stroke="#2C3E50" stroke-width="1.5"/>
+
+  <!-- Three roots lifting off -->
+  <line x1="90"  y1="156" x2="42"  y2="205"
+        stroke="#1A4F8A" stroke-width="2.5" stroke-linecap="round" opacity="0.65"/>
+  <line x1="100" y1="156" x2="100" y2="210"
+        stroke="#525C62" stroke-width="2.5" stroke-linecap="round" opacity="0.65"/>
+  <line x1="110" y1="156" x2="158" y2="205"
+        stroke="#E8921A" stroke-width="2.5" stroke-linecap="round" opacity="0.65"/>
+
+  <!-- "unrooted" wordmark -->
+  <text x="100" y="232"
+        text-anchor="middle"
+        font-family="'Helvetica Neue', Helvetica, Arial, sans-serif"
+        font-size="20" font-weight="300" letter-spacing="3"
+        fill="#1A4F8A">unrooted</text>
+</svg>
