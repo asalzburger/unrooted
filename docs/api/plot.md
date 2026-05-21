@@ -18,10 +18,6 @@ Style classes and matplotlib-backend functions.
 
 ::: unrooted.plot.mpl.overlay.overlay
 
-## stamp
-
-::: unrooted.plot.mpl.stamp.stamp
-
 ## generate_stylesheet
 
 ::: unrooted.plot.mpl.stylesheet.generate_stylesheet
