@@ -75,9 +75,9 @@ def test_overlay_ratio_values_correct():
     fig = overlay([h1, h2], ratio=True)
     # The first ratio trace is the step line for h2/h1.
     # Values should be 2.0 everywhere (within the step array).
-    ratio_traces = [t for t in fig.data if t.yaxis == "y2"]
+    ratio_traces = [t for t in fig.data if t.yaxis == "y2"]  # type: ignore[union-attr]
     step_trace = ratio_traces[0]
-    finite = step_trace.y[~np.isnan(step_trace.y)]
+    finite = step_trace.y[~np.isnan(step_trace.y)]  # type: ignore[union-attr]
     np.testing.assert_allclose(finite, 2.0)
 
 
@@ -85,10 +85,10 @@ def test_overlay_ratio_zero_denominator_is_nan():
     h1 = _hist([0.0, 4.0], variances=[0.0, 4.0])
     h2 = _hist([1.0, 8.0], variances=[1.0, 8.0])
     fig = overlay([h1, h2], ratio=True)
-    ratio_traces = [t for t in fig.data if t.yaxis == "y2"]
+    ratio_traces = [t for t in fig.data if t.yaxis == "y2"]  # type: ignore[union-attr]
     step_trace = ratio_traces[0]
     # First bin denominator is 0 → nan
-    assert np.isnan(step_trace.y[0])
+    assert np.isnan(step_trace.y[0])  # type: ignore[union-attr]
 
 
 # ---------------------------------------------------------------------------
@@ -100,7 +100,7 @@ def test_overlay_labels_set_on_traces():
     h1 = _hist([1.0, 2.0])
     h2 = _hist([3.0, 4.0])
     fig = overlay([h1, h2], labels=["alpha", "beta"])
-    names = [t.name for t in fig.data if t.showlegend]
+    names = [t.name for t in fig.data if t.showlegend]  # type: ignore[union-attr]
     assert "alpha" in names
     assert "beta" in names
 
@@ -110,7 +110,7 @@ def test_overlay_no_labels_no_legend():
     h2 = _hist([3.0, 4.0])
     fig = overlay([h1, h2])
     # No trace should have showlegend=True when labels not supplied
-    assert not any(t.showlegend for t in fig.data)
+    assert not any(t.showlegend for t in fig.data)  # type: ignore[union-attr]
 
 
 # ---------------------------------------------------------------------------
@@ -132,7 +132,7 @@ def test_overlay_styles_auto_color_when_none():
     h2 = _hist([3.0, 4.0])
     fig = overlay([h1, h2])
     # Both histograms should contribute traces
-    assert len(fig.data) >= 2
+    assert len(fig.data) >= 2  # type: ignore[arg-type]
 
 
 # ---------------------------------------------------------------------------

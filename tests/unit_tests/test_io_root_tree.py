@@ -40,8 +40,8 @@ def test_count_scalar_auto_range():
     import uproot as _uproot
 
     h = load_branch(INPUT, "tree", "x")
-    with _uproot.open(INPUT) as f:
-        data = np.asarray(ak.flatten(f["tree"]["x"].array(library="ak"), axis=None))
+    with _uproot.open(INPUT) as f:  # type: ignore[union-attr]
+        data = np.asarray(ak.flatten(f["tree"]["x"].array(library="ak"), axis=None))  # type: ignore[union-attr,arg-type]
     assert h.axes[0].edges[0] == pytest.approx(float(data.min()))
     assert h.axes[0].edges[-1] == pytest.approx(float(data.max()))
 
