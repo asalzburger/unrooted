@@ -27,6 +27,7 @@ docs = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.25",
     "pillow",
+    "plotly>=5.0",
 ]
 plotly = [
     "plotly>=5.0",
