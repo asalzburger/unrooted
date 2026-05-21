@@ -121,34 +121,34 @@ def test_plot_2d_axis_labels():
 def test_plot_1d_default_trace_count():
     h = _hist([1.0, 4.0])
     fig = plot(h, style=HistogramStyle())
-    assert len(fig.data) == 2
+    assert len(fig.data) == 2  # type: ignore[arg-type]
 
 
 def test_plot_1d_no_error_display():
     h = _hist([1.0, 4.0])
     fig = plot(h, style=HistogramStyle(error_display=None))
-    assert len(fig.data) == 1  # step line only
+    assert len(fig.data) == 1  # type: ignore[arg-type]  # step line only
 
 
 def test_plot_1d_fill_adds_trace():
     # fill + line + error bar = 3 traces
     h = _hist([1.0, 4.0])
     fig = plot(h, style=HistogramStyle(fill_alpha=0.2, error_display=None))
-    assert len(fig.data) == 2  # fill trace + step line
+    assert len(fig.data) == 2  # type: ignore[arg-type]  # fill trace + step line
 
 
 def test_plot_1d_error_band_adds_two_traces():
     h = _hist([4.0, 9.0])
     fig = plot(h, style=HistogramStyle(error_display="band"))
     # step line + upper boundary + lower fill = 3
-    assert len(fig.data) == 3
+    assert len(fig.data) == 3  # type: ignore[arg-type]
 
 
 def test_plot_1d_marker_adds_trace():
     h = _hist([1.0, 2.0])
     # line + marker (no error display)
     fig = plot(h, style=HistogramStyle(marker="o", error_display=None))
-    assert len(fig.data) == 2
+    assert len(fig.data) == 2  # type: ignore[arg-type]
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +161,7 @@ def test_plot_1d_spread_bar():
     h.spread_min = np.array([2.0, 5.0])
     h.spread_max = np.array([6.0, 13.0])
     fig = plot(h, style=HistogramStyle(error_display=None, spread_display="bar"))
-    assert len(fig.data) == 2  # step line + spread bar
+    assert len(fig.data) == 2  # type: ignore[arg-type]  # step line + spread bar
 
 
 def test_plot_1d_spread_band():
@@ -169,7 +169,7 @@ def test_plot_1d_spread_band():
     h.spread_min = np.array([2.0, 5.0])
     h.spread_max = np.array([6.0, 13.0])
     fig = plot(h, style=HistogramStyle(error_display=None, spread_display="band"))
-    assert len(fig.data) == 3  # step line + upper + lower fill
+    assert len(fig.data) == 3  # type: ignore[arg-type]  # step line + upper + lower fill
 
 
 def test_plot_1d_spread_missing_raises():
@@ -213,7 +213,7 @@ def test_plot_root_hx():
     h = load(DATA_DIR / "tests_input.root", "hx")
     fig = plot(h)
     assert isinstance(fig, go.Figure)
-    assert len(fig.data) >= 1
+    assert len(fig.data) >= 1  # type: ignore[arg-type]
 
 
 def test_plot_root_hxy_2d():

@@ -54,10 +54,12 @@ def _gen_mpl() -> None:
     # Overlay with ratio panel
     main_ax, _ = overlay([hx, hy], labels=["hx", "hy"], styles=[ss[0], ss[1]], ratio=True)
     main_ax.set_title("Overlay: hx (ref) vs hy")
-    fig = main_ax.get_figure()
-    fig.tight_layout()
-    fig.savefig(_OUT / "mpl_overlay_ratio.png", dpi=120, bbox_inches="tight")
-    plt.close(fig)
+    from matplotlib.figure import Figure as MplFigure  # noqa: PLC0415
+    ratio_fig = main_ax.get_figure()
+    assert isinstance(ratio_fig, MplFigure)
+    ratio_fig.tight_layout()
+    ratio_fig.savefig(_OUT / "mpl_overlay_ratio.png", dpi=120, bbox_inches="tight")
+    plt.close(ratio_fig)
 
     # 2D heatmap
     fig, ax = plt.subplots(figsize=(6, 5))
