@@ -9,3 +9,7 @@ It follows the following design principle, characterized by the components
     - data stored in internal objects based on `numpy`, or `numpy` wrapper classes
 - A drawing, displaying module with different backends (default: matplotlib)
     - customization, e.g. by adding detector logos, style, color schemes
+
+
+* See the `github` pages for more information:
+https://asalzburger.github.io/unrooted/
