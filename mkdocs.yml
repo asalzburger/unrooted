@@ -24,6 +24,9 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
+hooks:
+  - docs/hooks.py
+
 plugins:
   - search
   - mkdocstrings:
@@ -57,6 +60,7 @@ nav:
     - Plotting: user-guide/plotting.md
     - Styles & Themes: user-guide/styling.md
     - Resources: user-guide/resources.md
+    - Examples: user-guide/examples.md
   - API Reference:
     - Core: api/core.md
     - I/O: api/io.md

@@ -53,7 +53,9 @@ def overlay(
 
     for i, hist in enumerate(hists):
         auto_color = DEFAULT_COLORS[i % len(DEFAULT_COLORS)]
-        style = styles[i] if styles is not None else HistogramStyle(line_color=auto_color)
+        style = (
+            styles[i] if styles is not None else HistogramStyle(line_color=auto_color)
+        )
         color: str | tuple[float, ...] = (
             style.line_color if style.line_color is not None else auto_color
         )

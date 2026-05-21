@@ -94,7 +94,7 @@ def test_draw_range_bar_midpoints_correct():
     edges = np.array([0.0, 1.0, 2.0])
     _draw_range(ax, centers, values, lo, hi, edges, "bar", "black", 1.0)
     container = ax.containers[0]
-    segments = container.lines[2][0].get_segments()
+    segments = container.lines[2][0].get_segments()  # type: ignore[union-attr]
     y_mids = np.array([(s[0][1] + s[1][1]) / 2 for s in segments])
     np.testing.assert_allclose(y_mids, values)
 

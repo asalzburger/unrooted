@@ -89,7 +89,7 @@ def test_ratio_values_computed():
     assert ratio_ax is not None
     container = ratio_ax.containers[0]
     # lines[2][0] is the LineCollection for vertical error bars
-    segments = container.lines[2][0].get_segments()
+    segments = container.lines[2][0].get_segments()  # type: ignore[union-attr]
     y_mids = np.array([(s[0][1] + s[1][1]) / 2 for s in segments])
     np.testing.assert_allclose(y_mids, np.array([0.5, 0.5]))
 
@@ -102,7 +102,7 @@ def test_ratio_errors_correct():
     # r = 8/4 = 2.0, sigma_r = sqrt((4/4)^2 + (8*2/16)^2) = sqrt(2)
     expected_err = np.sqrt((4.0 / 4.0) ** 2 + (8.0 * 2.0 / 4.0**2) ** 2)
     container = ratio_ax.containers[0]
-    segments = container.lines[2][0].get_segments()  # [[x, y_lo], [x, y_hi]]
+    segments = container.lines[2][0].get_segments()  # type: ignore[union-attr]  # [[x, y_lo], [x, y_hi]]
     actual_err = (segments[0][1][1] - segments[0][0][1]) / 2
     np.testing.assert_allclose(actual_err, expected_err, rtol=1e-6)
 
@@ -113,7 +113,7 @@ def test_ratio_zero_denominator_is_nan():
     _, ratio_ax = overlay([h_ref, h_num], ratio=True)
     assert ratio_ax is not None
     container = ratio_ax.containers[0]
-    segments = container.lines[2][0].get_segments()
+    segments = container.lines[2][0].get_segments()  # type: ignore[union-attr]
     # Bin 0 is NaN → matplotlib stores it as an empty segment; bin 1 has ratio=2.0
     non_empty = [s for s in segments if len(s) == 2]
     assert len(non_empty) == 1
