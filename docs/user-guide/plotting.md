@@ -3,7 +3,7 @@
 All plot functions live in `unrooted.plot.mpl` (the matplotlib backend).
 
 ```python
-from unrooted.plot.mpl import plot, overlay, stamp
+from unrooted.plot.mpl import plot, overlay
 ```
 
 ---

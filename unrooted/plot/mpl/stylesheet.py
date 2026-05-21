@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal, cast
 
 import numpy as np
 
@@ -36,7 +35,6 @@ def generate_stylesheet(
     import matplotlib.pyplot as plt
 
     from unrooted.plot.mpl.overlay import overlay
-    from unrooted.plot.mpl.stamp import stamp
 
     style_set = StyleSet.load(target)
 
@@ -49,7 +47,6 @@ def generate_stylesheet(
     fig, ax = plt.subplots(figsize=(10, 5))
     overlay(hists, ax=ax, labels=labels, styles=styles)
     ax.set_title(f"{target.upper()} style palette", fontsize=13, fontweight="bold")
-    stamp(ax, cast(Literal["sd", "odd"], target), loc="upper left", zoom=0.12)
 
     out = Path(output) if output is not None else _RESOURCES / target / "stylesheet.png"
     fig.savefig(out, dpi=150, bbox_inches="tight")
