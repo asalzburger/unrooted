@@ -9,8 +9,8 @@ from unrooted.core.axis import Axis
 from unrooted.core.histogram import Histogram
 from unrooted.plot.style import HistogramStyle
 
-plotly = pytest.importorskip("plotly")
-go = pytest.importorskip("plotly.graph_objects")
+plotly = pytest.importorskip("plotly")  # noqa: F841
+go = pytest.importorskip("plotly.graph_objects")  # noqa: F841
 
 from unrooted.plot.plotly.histogram import plot, _staircase  # noqa: E402
 
