@@ -1,6 +1,6 @@
 # Plot
 
-Style classes and matplotlib-backend functions.
+Style classes and plotting functions for both backends.
 
 ## HistogramStyle
 
@@ -10,14 +10,30 @@ Style classes and matplotlib-backend functions.
 
 ::: unrooted.plot.style_set.StyleSet
 
-## plot
+---
+
+## Matplotlib backend
+
+### plot
 
 ::: unrooted.plot.mpl.histogram.plot
 
-## overlay
+### overlay
 
 ::: unrooted.plot.mpl.overlay.overlay
 
-## generate_stylesheet
+### generate_stylesheet
 
 ::: unrooted.plot.mpl.stylesheet.generate_stylesheet
+
+---
+
+## Plotly backend
+
+### plot
+
+::: unrooted.plot.plotly.histogram.plot
+
+### overlay
+
+::: unrooted.plot.plotly.overlay.overlay
