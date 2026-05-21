@@ -79,7 +79,7 @@ ax = plot(h, style=style)
 (ax, ax_r) = overlay([h1, h2], labels=["h1", "h2"], ratio=True)
 ```
 
-The ratio panel shows `h_i / h_1` for each subsequent histogram.  Uncertainties
+The ratio panel shows `h_i / h_0` for each subsequent histogram.  Uncertainties
 are propagated via Gaussian error propagation.  Bins where the reference is zero
 are shown as `NaN` (no marker).
 
