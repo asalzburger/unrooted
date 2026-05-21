@@ -17,7 +17,7 @@ no ROOT installation required.
 
 ```python
 from unrooted.io.root import load
-from unrooted.plot.mpl import plot, stamp, StyleSet
+from unrooted.plot.mpl import plot, StyleSet
 
 # Load a histogram from a ROOT file
 h = load("analysis.root", "hx")
@@ -25,9 +25,6 @@ h = load("analysis.root", "hx")
 # Plot it with the ODD colour palette
 ss = StyleSet.load("odd")
 ax = plot(h, style=ss[0])
-
-# Stamp the detector logo
-stamp(ax, "odd")
 ax.figure.savefig("plot.png")
 ```
 
@@ -39,7 +36,7 @@ ax.figure.savefig("plot.png")
 |--------|---------|
 | `unrooted.io.root` | Read ROOT histograms (`TH1`, `TH2`, `TProfile`) and TTree branches |
 | `unrooted.core` | `Histogram` and `Axis` — the central data structures |
-| `unrooted.plot.mpl` | Matplotlib backend: `plot`, `overlay`, `stamp`, `generate_stylesheet` |
+| `unrooted.plot.mpl` | Matplotlib backend: `plot`, `overlay`, `generate_stylesheet` |
 | `unrooted.plot` | `HistogramStyle`, `StyleSet` — per-histogram and per-target theming |
 
 ---

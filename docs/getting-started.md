@@ -59,12 +59,11 @@ ax.legend()
 ## 3 — Apply a detector style
 
 ```python
-from unrooted.plot.mpl import plot, stamp
+from unrooted.plot.mpl import plot
 from unrooted.plot import StyleSet
 
 ss = StyleSet.load("odd")   # or "sd"
 ax = plot(h, style=ss[0])
-stamp(ax, "odd")
 ax.figure.savefig("hx_styled.png")
 ```
 
@@ -74,7 +73,7 @@ ax.figure.savefig("hx_styled.png")
 
 ```python
 from unrooted.io.root import load
-from unrooted.plot.mpl import overlay, stamp
+from unrooted.plot.mpl import overlay
 from unrooted.plot import StyleSet
 
 ss = StyleSet.load("odd")
@@ -86,7 +85,6 @@ h2 = load("data.root", "hy")
     labels=["x", "y"],
     styles=[ss[0], ss[1]],
 )
-stamp(ax, "odd")
 ax.figure.savefig("overlay.png")
 ```
 
