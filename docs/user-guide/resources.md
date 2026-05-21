@@ -7,30 +7,35 @@ can be used to give plots a consistent, experiment-specific look.
 
 ## Available targets
 
-| Target | Description |
-|--------|-------------|
-| `"sd"` | Super Duper — sample detector used in unit tests and examples |
-| `"odd"` | OpenDataDetector — open reference detector geometry |
+### sd — Super Duper (sample detector)
 
-Each target lives in its own sub-directory:
+Used in unit tests and examples.
 
-```
-resources/
-├── sd/
-│   ├── super_duper.png          full logo
-│   ├── super_duper.svg
-│   ├── super_duper_line.png     compact line-art variant
-│   ├── super_duper_line.svg
-│   ├── colors.json              four-color palette
-│   └── stylesheet.png           auto-generated palette preview
-└── odd/
-    ├── odd_tech_light.png
-    ├── odd_tech_light.svg
-    ├── odd_tech_light_line.png
-    ├── odd_tech_light_line.svg
-    ├── colors.json
-    └── stylesheet.png
-```
+<div style="display:flex; gap:3em; align-items:center; padding:1em 0;">
+  <div style="text-align:center">
+    <img src="../assets/sd_logo.svg" alt="SD full logo" width="180"/>
+    <p><em>full</em></p>
+  </div>
+  <div style="text-align:center">
+    <img src="../assets/sd_logo_line.svg" alt="SD line logo" width="180"/>
+    <p><em>line</em></p>
+  </div>
+</div>
+
+### odd — OpenDataDetector
+
+Real detector logos from the [OpenDataDetector project](https://github.com/acts-project/OpenDataDetector).
+
+<div style="display:flex; gap:3em; align-items:center; padding:1em 0;">
+  <div style="text-align:center">
+    <img src="../assets/odd_logo.svg" alt="ODD full logo" width="220"/>
+    <p><em>full</em></p>
+  </div>
+  <div style="text-align:center">
+    <img src="../assets/odd_logo_line.svg" alt="ODD line logo" width="220"/>
+    <p><em>line</em></p>
+  </div>
+</div>
 
 ---
 
@@ -61,8 +66,26 @@ See [Styles & Themes](styling.md) for the full `StyleSet` API.
 
 ## Logo files
 
-PNG and SVG logos are provided for both the full-colour and line-art variants.
+Each target ships PNG and SVG variants of both the full-colour and line-art logos.
 They are available for use in post-processing workflows or custom plot annotations.
+
+```
+resources/
+├── sd/
+│   ├── super_duper.png          full logo
+│   ├── super_duper.svg
+│   ├── super_duper_line.png     compact line-art variant
+│   ├── super_duper_line.svg
+│   ├── colors.json              four-color palette
+│   └── stylesheet.png           auto-generated palette preview
+└── odd/
+    ├── odd_tech_light.png
+    ├── odd_tech_light.svg
+    ├── odd_tech_light_line.png
+    ├── odd_tech_light_line.svg
+    ├── colors.json
+    └── stylesheet.png
+```
 
 ---
 
