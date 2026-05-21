@@ -55,6 +55,7 @@ Load it with:
 
 ```python
 from unrooted.plot import StyleSet
+from unrooted.plot.mpl import plot
 
 ss = StyleSet.load("odd")   # reads resources/odd/colors.json
 ax = plot(h, style=ss[0])   # first of the four coordinated styles
