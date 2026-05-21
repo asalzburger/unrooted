@@ -118,9 +118,13 @@ uv add "unrooted[plotly]"
 pip install "unrooted[plotly]"
 ```
 
-The plotly backend has the same `plot()` / `overlay()` API as the matplotlib
-backend, but returns a `plotly.graph_objects.Figure` instead of axes.  Figures
-are interactive by default: zoom, pan, hover tooltips, and legend toggling work
+The plotly backend provides a similar high-level `plot()` / `overlay()` API to
+the matplotlib backend, but the signatures are not identical.  In particular,
+it returns a `plotly.graph_objects.Figure` instead of matplotlib axes, so
+matplotlib-specific parameters such as `ax=` are not supported, and
+`overlay(..., ratio=True)` returns a single figure rather than the
+`(ax_main, ax_ratio)` tuple returned by the matplotlib backend.  Figures are
+interactive by default: zoom, pan, hover tooltips, and legend toggling work
 out of the box.
 
 !!! note
