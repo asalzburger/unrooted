@@ -19,6 +19,9 @@ def _to_rgba(color: str | tuple[float, ...], alpha: float = 1.0) -> str:
         r = int(color[1:3], 16)
         g = int(color[3:5], 16)
         b = int(color[5:7], 16)
+        if len(color) == 9:
+            embedded_alpha = int(color[7:9], 16) / 255
+            return f"rgba({r},{g},{b},{embedded_alpha * alpha})"
         if alpha == 1.0:
             return color
         return f"rgba({r},{g},{b},{alpha})"
