@@ -56,7 +56,7 @@ nav:
     - Histograms & Axes: user-guide/histograms.md
     - Plotting: user-guide/plotting.md
     - Styles & Themes: user-guide/styling.md
-    - Logos & Stamps: user-guide/logos.md
+    - Resources: user-guide/resources.md
   - API Reference:
     - Core: api/core.md
     - I/O: api/io.md

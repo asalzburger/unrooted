@@ -1,4 +1,4 @@
-"""Example: load histograms from a ROOT file and plot them with detector logo stamps.
+"""Example: load histograms from a ROOT file and plot them.
 
 Run with:
     uv run python tests/examples/example_root_histogram.py
@@ -10,7 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from unrooted.io.root import load
-from unrooted.plot.mpl import plot, stamp
+from unrooted.plot.mpl import plot
 
 DATA = Path(__file__).parent.parent / "data" / "root" / "tests_input.root"
 
@@ -18,15 +18,13 @@ DATA = Path(__file__).parent.parent / "data" / "root" / "tests_input.root"
 def main() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    # --- 1D histogram with sample detector logo ---
+    # --- 1D histogram ---
     h1d = load(DATA, "hx")
     plot(h1d, ax=axes[0])
-    stamp(axes[0], logo="sd", variant="full", loc="upper right", zoom=0.15)
 
-    # --- 2D histogram with open data detector logo (line variant) ---
+    # --- 2D histogram ---
     h2d = load(DATA, "hxy")
     plot(h2d, ax=axes[1])
-    stamp(axes[1], logo="odd", variant="line", loc="upper right", zoom=0.15)
 
     fig.tight_layout()
     plt.show()

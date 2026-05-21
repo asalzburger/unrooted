@@ -66,7 +66,6 @@ unrooted/
     └── mpl/               Matplotlib backend
         ├── histogram.py   plot()
         ├── overlay.py     overlay() + optional ratio panel
-        ├── stamp.py       stamp() — detector logo overlay
         └── stylesheet.py  generate_stylesheet() — palette preview PNG
 ```
 
@@ -101,7 +100,6 @@ The `Histogram` dataclass is the single currency that flows through the library.
 │                                                                  │
 │  plot(hist, style=HistogramStyle(…))                             │
 │  overlay([h1,h2,…], styles=StyleSet.load("odd")[:])             │
-│  stamp(ax, "odd")                                                │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -126,6 +124,6 @@ resources/
     └── stylesheet.png
 ```
 
-Adding a new target requires only a logo PNG, a `colors.json` with four hex
-codes, and a registration in `stamp.py`'s `_LOGO_FILES` dict.
-`StyleSet.load()` and `generate_stylesheet()` then work automatically.
+Adding a new target requires a `colors.json` with four hex codes; logo files
+(PNG/SVG) are optional.  `StyleSet.load()` and `generate_stylesheet()` work
+automatically once `colors.json` is present.

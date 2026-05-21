@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from unrooted.io.root import load
-from unrooted.plot.mpl import HistogramStyle, overlay, plot, stamp
+from unrooted.plot.mpl import HistogramStyle, overlay, plot
 
 DATA = Path(__file__).parent.parent / "data" / "root" / "tests_input.root"
 
@@ -34,7 +34,6 @@ def main() -> None:
     # ── Panel 1: default style (step line + error bars) ──────────────────────
     plot(hx, ax=axes[0, 0], style=HistogramStyle())
     axes[0, 0].set_title("Default: line + error bars")
-    stamp(axes[0, 0], logo="sd", variant="line", loc="upper left", zoom=0.10)
 
     # ── Panel 2: line + filled area + error band ──────────────────────────────
     plot(
@@ -86,7 +85,6 @@ def main() -> None:
         styles=[sx, sy],
     )
     main_ax.set_title("Overlay with ratio: hx (ref) vs hy")
-    stamp(main_ax, logo="sd", variant="line", loc="upper left", zoom=0.10)
     # Move the ratio panel into the grid (it was created in its own figure).
     # For simplicity, just show the fourth subplot empty and display separately.
     axes[1, 1].axis("off")
