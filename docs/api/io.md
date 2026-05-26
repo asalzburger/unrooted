@@ -7,6 +7,10 @@ Functions for reading ROOT files.  All functions return a
 
 ::: unrooted.io.root.reader.load
 
+## load_efficiency
+
+::: unrooted.io.root.reader.load_efficiency
+
 ## load_branch
 
 ::: unrooted.io.root.tree.load_branch
