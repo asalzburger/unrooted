@@ -10,6 +10,7 @@ from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).parent.parent
 _DATA = _PROJECT_ROOT / "tests" / "data" / "root" / "tests_input.root"
+_EFF_DATA = _PROJECT_ROOT / "tests" / "data" / "root" / "tests_efficiency.root"
 _OUT = Path(__file__).parent / "assets" / "examples"
 
 
@@ -20,6 +21,8 @@ def on_pre_build(config, **kwargs) -> None:  # noqa: ANN001
         ("matplotlib examples", _gen_mpl),
         ("plotly examples", _gen_plotly),
         ("terminal examples", _gen_terminal),
+        ("profile examples", _gen_profile),
+        ("efficiency examples", _gen_efficiency),
     ]:
         try:
             fn()
@@ -115,6 +118,83 @@ def _gen_terminal() -> None:
     (_OUT / "terminal_overlay.txt").write_text(
         overlay([hx, hy], labels=["hx", "hy"], max_lines=20), encoding="utf-8"
     )
+
+
+def _gen_profile() -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from unrooted.io.root import load
+    from unrooted.plot.mpl import overlay, plot
+    from unrooted.plot.style import HistogramStyle
+    from unrooted.plot.style_set import StyleSet
+
+    ss = StyleSet.load("odd")
+    prof_x = load(_DATA, "profX")
+    prof_y = load(_DATA, "profY")
+
+    # Single TProfile with spread band
+    style = HistogramStyle(
+        line_color=ss[0].line_color,
+        fill_alpha=0.15,
+        error_display="bar",
+        spread_display="band",
+    )
+    fig, ax = plt.subplots(figsize=(8, 5))
+    plot(prof_x, ax=ax, style=style)
+    ax.set_title("TProfile: profX mean ± σ_y spread")
+    fig.tight_layout()
+    fig.savefig(_OUT / "mpl_profile.png", dpi=120, bbox_inches="tight")
+    plt.close(fig)
+
+    # Overlay two profiles
+    sx = HistogramStyle(line_color=ss[0].line_color, error_display="bar", spread_display="band")
+    sy = HistogramStyle(
+        line_color=ss[1].line_color, line_style="--",
+        error_display="bar", spread_display="band",
+    )
+    main_ax, _ = overlay(
+        [prof_x, prof_y], labels=["profX", "profY"], styles=[sx, sy], ratio=True
+    )
+    main_ax.set_title("TProfile overlay: profX vs profY")
+    from matplotlib.figure import Figure as MplFigure  # noqa: PLC0415
+    ratio_fig = main_ax.get_figure()
+    assert isinstance(ratio_fig, MplFigure)
+    ratio_fig.tight_layout()
+    ratio_fig.savefig(_OUT / "mpl_profile_overlay.png", dpi=120, bbox_inches="tight")
+    plt.close(ratio_fig)
+
+
+def _gen_efficiency() -> None:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from unrooted.io.root import load_efficiency
+    from unrooted.plot.mpl import plot
+    from unrooted.plot.style import HistogramStyle
+    from unrooted.plot.style_set import StyleSet
+
+    ss = StyleSet.load("odd")
+    eff = load_efficiency(_EFF_DATA, "h_passed", "h_total")
+
+    style = HistogramStyle(
+        line_color=ss[0].line_color,
+        marker="o",
+        marker_size=5,
+        fill_alpha=0.12,
+        error_display="bar",
+        spread_display="band",
+    )
+    fig, ax = plt.subplots(figsize=(8, 5))
+    plot(eff, ax=ax, style=style)
+    ax.set_ylim(0, 1.1)
+    ax.axhline(1.0, color="gray", linestyle=":", linewidth=0.8)
+    ax.set_title("Efficiency: passed / total with ±σ CI")
+    fig.tight_layout()
+    fig.savefig(_OUT / "mpl_efficiency.png", dpi=120, bbox_inches="tight")
+    plt.close(fig)
 
 
 def _write_html(fig, filename: str) -> None:  # noqa: ANN001

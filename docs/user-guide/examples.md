@@ -75,3 +75,31 @@ palette from [`StyleSet`][unrooted.plot.style_set.StyleSet].
       frameborder="0"
       scrolling="no">
     </iframe>
+
+---
+
+## TProfile with spread
+
+Loaded from a ROOT `TProfile` object.  `values` are per-bin means; the shaded
+band shows mean ± σ_y (standard deviation of the profiled quantity); error bars
+show ±SE (standard error of the mean).
+
+=== "Single profile"
+
+    ![TProfile with spread band](../assets/examples/mpl_profile.png)
+
+=== "Overlay with ratio"
+
+    ![TProfile overlay](../assets/examples/mpl_profile_overlay.png)
+
+---
+
+## Efficiency histogram
+
+Loaded via `load_efficiency()` from a pair of `TH1` histograms
+(passed / total).  Values are per-bin efficiency; the shaded band and error
+bars show the Gaussian ±σ confidence interval, clamped to [0, 1].
+
+=== "Matplotlib"
+
+    ![Efficiency with CI band](../assets/examples/mpl_efficiency.png)
