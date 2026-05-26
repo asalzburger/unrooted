@@ -1,12 +1,13 @@
 # Plotting
 
-`unrooted` ships two independent plotting backends that share the same
+`unrooted` ships three independent plotting backends that share the same
 `Histogram`, `HistogramStyle`, and `StyleSet` objects.
 
 | Backend | Import | Returns | Best for |
 |---------|--------|---------|----------|
 | **matplotlib** | `unrooted.plot.mpl` | `matplotlib.axes.Axes` | publication figures, scripts |
 | **plotly** | `unrooted.plot.plotly` | `plotly.graph_objects.Figure` | interactive exploration |
+| **terminal** | `unrooted.plot.terminal` | `str` | quick inspection, headless environments, CI logs |
 
 ---
 
@@ -181,3 +182,77 @@ h2 = load("data.root", "hxy")
 fig = plot(h2)   # renders as go.Heatmap with Viridis colorscale
 fig.show()
 ```
+
+---
+
+## Terminal backend
+
+```python
+from unrooted.plot.terminal import plot, overlay
+```
+
+The terminal backend renders 1D histograms directly as a multi-line unicode
+string — no display library, no GUI, no file I/O required.  Call `print()` on
+the result to display it anywhere: a notebook cell, a CI log, an SSH session.
+
+!!! note
+    Requires a monospace font with unicode support in your terminal.
+    The plot width equals the number of bins (maximum 100).
+
+### `plot()` — single histogram
+
+```python
+result = plot(h, max_lines=40)
+print(result)
+```
+
+Each bin occupies one character column; the height is proportional to the bin
+value scaled to `max_lines` rows.  The y-axis shows four tick labels at
+100 %, 75 %, 50 %, and 25 % of the global maximum; `0` appears on the axis
+line itself.
+
+Example output (30 rows, Gaussian-shaped histogram):
+
+```
+46.8 │                         ○                        
+     │                       ○ ○○                       
+35.1 │                     ○ ○ ○○○○                     
+     │                    ○○○○○○○○○○                    
+23.4 │                 ○ ○○○○○○○○○○○ ○                  
+     │               ○○○○○○○○○○○○○○○○○○ ○               
+11.7 │             ○○○○○○○○○○○○○○○○○○○○○○○ ○            
+     │          ○○○○○○○○○○○○○○○○○○○○○○○○○○○○○           
+   0 └──────────────────────────────────────────────────→ x
+     -5   -4   -3   -2   -1    0    1    2    3    4    5
+```
+
+### `overlay()` — multiple histograms
+
+Up to four histograms can be overlaid.  When two or more histograms are present
+in the same cell, a composite glyph is used:
+
+| Combination | Glyph | Unicode |
+|-------------|-------|---------|
+| ○ alone | ○ | U+25CB |
+| ✚ alone | ✚ | U+271A |
+| □ alone | □ | U+25A1 |
+| · alone | · | U+00B7 |
+| ○ + ✚ | ⊕ | U+2295 |
+| ○ + · | ⊙ | U+2299 |
+| ✚ + □ | ⊞ | U+229E |
+| □ + · | ⊡ | U+22A1 |
+| ○ + □ | ⊚ | U+229A |
+| ✚ + · | ✢ | U+2722 |
+| any 3 | ⊛ | U+229B |
+| all 4 | ✳ | U+2733 |
+
+```python
+result = overlay([hx, hy], labels=["hx", "hy"], max_lines=30)
+print(result)
+```
+
+The legend is printed below the plot when `labels` is supplied.
+
+!!! note
+    Error bars and spread bands are intentionally omitted in the terminal
+    backend — the character-cell resolution makes them impractical to render.

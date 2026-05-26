@@ -37,3 +37,15 @@ Style classes and plotting functions for both backends.
 ### overlay
 
 ::: unrooted.plot.plotly.overlay.overlay
+
+---
+
+## Terminal backend
+
+### plot
+
+::: unrooted.plot.terminal.histogram.plot
+
+### overlay
+
+::: unrooted.plot.terminal.histogram.overlay
