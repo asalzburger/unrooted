@@ -29,6 +29,82 @@ h = load("analysis.root", "hx;1")  # explicit cycle – same result
 | `h.overflow` | Full array including flow bins |
 | `h.name` | Key string (cycle stripped) |
 
+### TProfile
+
+When the loaded object is a `TProfile`, `load()` additionally populates:
+
+| Attribute | Content |
+|-----------|---------|
+| `h.values` | Per-bin mean of the profiled quantity |
+| `h.variances` | Per-bin squared standard error of the mean (SE²) |
+| `h.spread_min` | Per-bin mean − σ_y (std-dev of profiled quantity) |
+| `h.spread_max` | Per-bin mean + σ_y |
+
+σ_y is derived as √(SE² × N) from the stored SE² and bin counts.
+Empty bins carry `nan` for the spread fields.
+
+```python
+hp = load("analysis.root", "profX")
+
+# hp.values      → per-bin mean
+# hp.variances   → per-bin SE² (error bars via hp.errors)
+# hp.spread_min  → mean − σ_y  (spread band)
+# hp.spread_max  → mean + σ_y
+```
+
+Plot with a spread band:
+
+```python
+from unrooted.plot.mpl import plot
+from unrooted.plot.style import HistogramStyle
+
+style = HistogramStyle(
+    line_color="#1A4F8A",
+    error_display="bar",    # SE error bars
+    spread_display="band",  # σ_y shaded band
+)
+plot(hp, style=style)
+```
+
+---
+
+## Efficiency histograms
+
+ROOT's `TEfficiency` class cannot currently be read by uproot.  Use
+`load_efficiency()` with a **passed** and a **total** `TH1` stored as
+separate keys — a common pattern in analysis frameworks:
+
+```python
+from unrooted.io.root import load_efficiency
+
+eff = load_efficiency("analysis.root", "h_passed", "h_total")
+```
+
+| Attribute | Content |
+|-----------|---------|
+| `eff.values` | Per-bin efficiency = passed / total |
+| `eff.variances` | Per-bin binomial variance = eff × (1 − eff) / total |
+| `eff.spread_min` | eff − σ, clamped to 0 (Gaussian ±σ CI) |
+| `eff.spread_max` | eff + σ, clamped to 1 |
+
+Bins where total = 0 carry `nan` for all fields.
+
+```python
+from unrooted.plot.mpl import plot
+from unrooted.plot.style import HistogramStyle
+
+style = HistogramStyle(
+    line_color="#1A4F8A",
+    marker="o",
+    error_display="bar",    # ±σ error bars
+    spread_display="band",  # shaded ±σ CI
+)
+plot(eff, style=style)
+```
+
+The function validates that the two histograms have the same number of bins
+and matching edges, raising `ValueError` otherwise.
+
 ---
 
 ## TTree branches
