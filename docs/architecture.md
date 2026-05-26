@@ -17,8 +17,9 @@ ROOT file (.root)
 │  Histogram  /  Axis     │  ←  unrooted.core
 └─────────────────────────┘
       │
-      ▼  unrooted.plot.mpl  (matplotlib under the hood)
-Publication-ready figures
+      ├──▶  unrooted.plot.mpl       → matplotlib Axes  (publication figures)
+      ├──▶  unrooted.plot.plotly    → plotly Figure     (interactive)
+      └──▶  unrooted.plot.terminal  → str               (headless / CI)
 ```
 
 ---
@@ -35,13 +36,15 @@ dataclass wrapper — no magic, no hidden state.  You can always reach into
 `.values` and `.variances` directly.
 
 **Separate concerns.**
-I/O, the data model, and plotting are independent layers.  Swapping the plotting
-backend (e.g. to Bokeh or Plotly) only requires a new `plot/` sub-package.
+I/O, the data model, and plotting are independent layers.  Swapping or adding a
+plotting backend only requires a new `plot/<backend>/` sub-package implementing
+`plot()` and `overlay()`.
 
 **Composable styling.**
 `HistogramStyle` covers a single histogram; `StyleSet` coordinates a four-color
 palette for a full overlay.  Styles are plain dataclasses — easy to construct,
-copy, or override.
+copy, or override.  The terminal backend intentionally omits styling (the
+character grid has no room for it) while sharing the same `Histogram` objects.
 
 ---
 
@@ -49,7 +52,7 @@ copy, or override.
 
 ```
 unrooted/
-├── __init__.py            Histogram, Histogram1D, Histogram2D, __version__
+├── __init__.py
 │
 ├── core/
 │   ├── axis.py            Axis dataclass (edges, label, centers, widths)
@@ -63,10 +66,20 @@ unrooted/
 └── plot/
     ├── style.py           HistogramStyle — per-histogram visual config
     ├── style_set.py       StyleSet — coordinated 4-color palette from JSON
-    └── mpl/               Matplotlib backend
-        ├── histogram.py   plot()
-        ├── overlay.py     overlay() + optional ratio panel
-        └── stylesheet.py  generate_stylesheet() — palette preview PNG
+    │
+    ├── mpl/               Matplotlib backend
+    │   ├── histogram.py   plot()   → matplotlib Axes
+    │   ├── overlay.py     overlay() + optional ratio panel
+    │   └── stylesheet.py  generate_stylesheet() — palette preview PNG
+    │
+    ├── plotly/            Plotly backend  (optional dep: plotly)
+    │   ├── _color.py      _to_rgba() — color normalisation helper
+    │   ├── histogram.py   plot()   → plotly Figure
+    │   └── overlay.py     overlay() + optional ratio panel
+    │
+    └── terminal/          Terminal backend  (stdlib + numpy only)
+        ├── _render.py     render() — core unicode rendering engine
+        └── histogram.py   plot() / overlay() → str
 ```
 
 ---
@@ -79,9 +92,9 @@ The `Histogram` dataclass is the single currency that flows through the library.
 ┌──────────────────────────────────────────────────────────────────┐
 │  I/O layer                                                       │
 │                                                                  │
-│  load("file.root", "hx")          → Histogram (TH1/TH2)         │
-│  load_branch("file.root","t","x") → Histogram (count)           │
-│  load_branch("file.root","t","x","y") → Histogram (profile)     │
+│  load("file.root", "hx")              → Histogram (TH1/TH2)     │
+│  load_branch("file.root", "t", "x")   → Histogram (count)       │
+│  load_branch("file.root", "t", "x", "y") → Histogram (profile)  │
 └───────────────────────┬──────────────────────────────────────────┘
                         │  Histogram(axes, values, variances, …)
 ┌───────────────────────▼──────────────────────────────────────────┐
@@ -93,14 +106,18 @@ The `Histogram` dataclass is the single currency that flows through the library.
 │    .variances  ndarray      — Poisson counts or SE²              │
 │    .spread_min ndarray|None — per-bin min  (profile only)        │
 │    .spread_max ndarray|None — per-bin max  (profile only)        │
-└───────────────────────┬──────────────────────────────────────────┘
-                        │
-┌───────────────────────▼──────────────────────────────────────────┐
-│  Plot layer (matplotlib backend)                                 │
-│                                                                  │
-│  plot(hist, style=HistogramStyle(…))                             │
-│  overlay([h1,h2,…], styles=StyleSet.load("odd")[:])             │
-└──────────────────────────────────────────────────────────────────┘
+└───────────┬───────────────────────────┬─────────────────────┬────┘
+            │                           │                     │
+            ▼                           ▼                     ▼
+┌───────────────────┐   ┌───────────────────────┐  ┌─────────────────┐
+│  plot.mpl         │   │  plot.plotly           │  │  plot.terminal  │
+│                   │   │                        │  │                 │
+│  plot()           │   │  plot()                │  │  plot()         │
+│  overlay()        │   │  overlay()             │  │  overlay()      │
+│                   │   │                        │  │                 │
+│  → Axes           │   │  → go.Figure           │  │  → str          │
+│  (publication)    │   │  (interactive)         │  │  (headless)     │
+└───────────────────┘   └───────────────────────┘  └─────────────────┘
 ```
 
 ---

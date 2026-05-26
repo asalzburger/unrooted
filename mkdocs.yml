@@ -44,6 +44,8 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: docs
   - pymdownx.tabbed:
       alternate_style: true
   - tables
