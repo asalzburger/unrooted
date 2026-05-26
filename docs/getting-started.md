@@ -110,3 +110,38 @@ hp = load_branch("data.root", "tree", "x", "y")
 ```
 
 See [Loading ROOT Data](user-guide/loading-root.md) for all supported branch types.
+
+---
+
+## 6 — Interactive Plotly figure
+
+```python
+from unrooted.plot.plotly import plot, overlay
+
+fig = plot(h)
+fig.show()                         # opens in browser
+
+fig2 = overlay([h1, h2], labels=["hx", "hy"], ratio=True)
+fig2.show()
+```
+
+Plotly is an optional dependency:
+
+```bash
+uv add "unrooted[plotly]"
+```
+
+---
+
+## 7 — Quick terminal preview
+
+No display needed — `unrooted.plot.terminal` renders directly to a unicode string:
+
+```python
+from unrooted.plot.terminal import plot, overlay
+
+print(plot(h))
+print(overlay([h1, h2], labels=["hx", "hy"]))
+```
+
+Useful for sanity-checking histograms in scripts, notebooks, SSH sessions, or CI logs.

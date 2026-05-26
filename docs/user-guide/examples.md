@@ -1,9 +1,10 @@
 # Examples
 
 !!! note "Auto-generated"
-    These outputs are regenerated automatically each time the documentation is built.
-    The build fails if any example cannot be produced, ensuring the examples always
-    reflect the current state of the library.
+    Matplotlib and Plotly outputs are regenerated automatically each time the
+    documentation is built.  The build fails if any example cannot be produced,
+    ensuring the examples always reflect the current state of the library.
+    Terminal output is rendered from the same ROOT data at build time.
 
 The examples below use histograms loaded from a ROOT file via
 [`unrooted.io.root.load`][unrooted.io.root.reader.load] and the **ODD** colour
@@ -27,6 +28,12 @@ palette from [`StyleSet`][unrooted.plot.style_set.StyleSet].
       scrolling="no">
     </iframe>
 
+=== "Terminal"
+
+    ```
+    --8<-- "assets/examples/terminal_hx.txt"
+    ```
+
 ---
 
 ## Overlay with ratio panel
@@ -44,6 +51,12 @@ palette from [`StyleSet`][unrooted.plot.style_set.StyleSet].
       frameborder="0"
       scrolling="no">
     </iframe>
+
+=== "Terminal"
+
+    ```
+    --8<-- "assets/examples/terminal_overlay.txt"
+    ```
 
 ---
 

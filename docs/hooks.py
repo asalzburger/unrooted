@@ -1,6 +1,7 @@
 """MkDocs pre-build hook — generates example outputs into docs/assets/examples/.
 
-Matplotlib examples are saved as PNG; Plotly examples as self-contained HTML.
+Matplotlib examples are saved as PNG; Plotly examples as self-contained HTML;
+terminal examples as plain .txt files (embedded via --8<-- snippets).
 The build fails (raises RuntimeError) if any generation step errors out.
 """
 from __future__ import annotations
@@ -18,6 +19,7 @@ def on_pre_build(config, **kwargs) -> None:  # noqa: ANN001
     for name, fn in [
         ("matplotlib examples", _gen_mpl),
         ("plotly examples", _gen_plotly),
+        ("terminal examples", _gen_terminal),
     ]:
         try:
             fn()
@@ -100,6 +102,19 @@ def _gen_plotly() -> None:
     fig = plot(hxy)
     fig.update_layout(title="hxy — 2D heatmap", height=480)
     _write_html(fig, "plotly_hxy.html")
+
+
+def _gen_terminal() -> None:
+    from unrooted.io.root import load
+    from unrooted.plot.terminal import overlay, plot
+
+    hx = load(_DATA, "hx")
+    hy = load(_DATA, "hy")
+
+    (_OUT / "terminal_hx.txt").write_text(plot(hx, max_lines=20), encoding="utf-8")
+    (_OUT / "terminal_overlay.txt").write_text(
+        overlay([hx, hy], labels=["hx", "hy"], max_lines=20), encoding="utf-8"
+    )
 
 
 def _write_html(fig, filename: str) -> None:  # noqa: ANN001

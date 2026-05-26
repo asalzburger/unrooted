@@ -36,8 +36,10 @@ ax.figure.savefig("plot.png")
 |--------|---------|
 | `unrooted.io.root` | Read ROOT histograms (`TH1`, `TH2`, `TProfile`) and TTree branches |
 | `unrooted.core` | `Histogram` and `Axis` — the central data structures |
-| `unrooted.plot.mpl` | Matplotlib backend: `plot`, `overlay`, `generate_stylesheet` |
 | `unrooted.plot` | `HistogramStyle`, `StyleSet` — per-histogram and per-target theming |
+| `unrooted.plot.mpl` | Matplotlib backend: `plot`, `overlay`, `generate_stylesheet` |
+| `unrooted.plot.plotly` | Plotly backend: interactive `plot` and `overlay` returning `go.Figure` |
+| `unrooted.plot.terminal` | Terminal backend: unicode `plot` and `overlay` returning `str` |
 
 ---
 
