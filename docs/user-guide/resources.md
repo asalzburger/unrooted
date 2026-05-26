@@ -13,11 +13,11 @@ Used in unit tests and examples.
 
 <div style="display:flex; gap:3em; align-items:center; padding:1em 0;">
   <div style="text-align:center">
-    <img src="../assets/sd_logo.svg" alt="SD full logo" width="180"/>
+    <img src="../../assets/sd_logo.svg" alt="SD full logo" width="180"/>
     <p><em>full</em></p>
   </div>
   <div style="text-align:center">
-    <img src="../assets/sd_logo_line.svg" alt="SD line logo" width="180"/>
+    <img src="../../assets/sd_logo_line.svg" alt="SD line logo" width="180"/>
     <p><em>line</em></p>
   </div>
 </div>
@@ -28,11 +28,11 @@ Real detector logos from the [OpenDataDetector project](https://github.com/acts-
 
 <div style="display:flex; gap:3em; align-items:center; padding:1em 0;">
   <div style="text-align:center">
-    <img src="../assets/odd_logo.svg" alt="ODD full logo" width="220"/>
+    <img src="../../assets/odd_logo.svg" alt="ODD full logo" width="220"/>
     <p><em>full</em></p>
   </div>
   <div style="text-align:center">
-    <img src="../assets/odd_logo_line.svg" alt="ODD line logo" width="220"/>
+    <img src="../../assets/odd_logo_line.svg" alt="ODD line logo" width="220"/>
     <p><em>line</em></p>
   </div>
 </div>
