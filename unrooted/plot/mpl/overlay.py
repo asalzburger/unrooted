@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 from typing import cast
 
 import matplotlib.pyplot as plt
@@ -51,14 +52,13 @@ def overlay(
 
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
+    resolved_styles: list[HistogramStyle] = []
     for i, hist in enumerate(hists):
         auto_color: str | tuple[float, ...] = colors[i % len(colors)]
         style = styles[i] if styles is not None else _default_style(auto_color)
-        # Ensure a color is set so ratio panel can pick the same colour.
         if style.line_color is None:
-            style = HistogramStyle(
-                **{**style.__dict__, "line_color": auto_color}
-            )
+            style = dataclasses.replace(style, line_color=auto_color)
+        resolved_styles.append(style)
         label = labels[i] if labels is not None else None
         _plot_1d_styled(hist, main_ax, style, label=label, set_axis_labels=False)
 
@@ -70,7 +70,7 @@ def overlay(
         main_ax.legend()
 
     if ax_ratio is not None:
-        _draw_ratio_panel(hists, ax_ratio, colors)
+        _draw_ratio_panel(hists, ax_ratio, resolved_styles)
 
     return main_ax, ax_ratio
 
@@ -78,7 +78,7 @@ def overlay(
 def _draw_ratio_panel(
     hists: list[Histogram],
     ax_ratio: MplAxes,
-    colors: list[str],
+    styles: list[HistogramStyle],
 ) -> None:
     ref_values = hists[0].values
     ref_errors = hists[0].errors
@@ -86,7 +86,9 @@ def _draw_ratio_panel(
     centers = hists[0].axes[0].centers
 
     for i, hist in enumerate(hists[1:], start=1):
-        color = colors[i % len(colors)]
+        style = styles[i]
+        assert style.line_color is not None  # guaranteed by overlay()
+        line_color: str | tuple[float, ...] = style.line_color
         with np.errstate(invalid="ignore", divide="ignore"):
             r = np.where(ref_values != 0, hist.values / ref_values, np.nan)
             sigma_r = np.where(
@@ -97,19 +99,29 @@ def _draw_ratio_panel(
                 ),
                 np.nan,
             )
-        ax_ratio.stairs(r, edges, color=color)
-        _draw_range(
-            ax_ratio,
-            centers=centers,
-            values=r,
-            lo=r - sigma_r,
-            hi=r + sigma_r,
-            edges=edges,
-            mode="bar",
-            color=color,
-            alpha=1.0,
-            capsize=2.0,
+        ax_ratio.stairs(
+            r,
+            edges,
+            color=line_color,
+            linestyle=style.line_style or "-",
+            linewidth=style.line_width,
         )
+        if style.error_display is not None:
+            error_color = (
+                style.error_color if style.error_color is not None else line_color
+            )
+            _draw_range(
+                ax_ratio,
+                centers=centers,
+                values=r,
+                lo=r - sigma_r,
+                hi=r + sigma_r,
+                edges=edges,
+                mode=style.error_display,
+                color=error_color,
+                alpha=style.error_alpha,
+                capsize=style.error_capsize,
+            )
 
     ax_ratio.axhline(1.0, color="black", linestyle="--", linewidth=0.8)
     ax_ratio.set_ylabel("Ratio")

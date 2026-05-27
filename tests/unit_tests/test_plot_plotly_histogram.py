@@ -12,7 +12,7 @@ from unrooted.plot.style import HistogramStyle
 plotly = pytest.importorskip("plotly")  # noqa: F841
 go = pytest.importorskip("plotly.graph_objects")  # noqa: F841
 
-from unrooted.plot.plotly.histogram import plot, _staircase  # noqa: E402
+from unrooted.plot.plotly.histogram import _staircase, plot  # noqa: E402
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "root"
 

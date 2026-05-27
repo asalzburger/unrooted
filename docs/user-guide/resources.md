@@ -46,8 +46,8 @@ Real detector logos from the [OpenDataDetector project](https://github.com/acts-
 ```json
 {
   "name": "odd",
-  "description": "OpenDataDetector — deep sapphire and warm amber",
-  "colors": ["#1A4F8A", "#E8921A", "#5B9BD5", "#525C62"]
+  "description": "OpenDataDetector — steel blue, vivid orange, teal/seafoam, dark crimson red",
+  "colors": ["#3A6FA8", "#E8721A", "#5BB8A8", "#9B2020"]
 }
 ```
 

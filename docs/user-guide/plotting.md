@@ -84,6 +84,26 @@ The ratio panel shows `h_i / h_0` for each subsequent histogram.  Uncertainties
 are propagated via Gaussian error propagation.  Bins where the reference is zero
 are shown as `NaN` (no marker).
 
+The ratio panel inherits the **style of B**: line color, line style, line width,
+error display mode, and error color all come from the corresponding
+`HistogramStyle`.  Set `error_display=None` to suppress error bars in the ratio
+panel, or use `LineStyle.DASHED` to visually distinguish the ratio line from the
+reference:
+
+```python
+from unrooted.plot.style import HistogramStyle, LineStyle
+from unrooted.plot.style_set import StyleSet
+
+ss = StyleSet.load("odd")
+sx = HistogramStyle.as_hist().with_color(ss.colors[0])              # reference
+sy = HistogramStyle.as_line(line_style=LineStyle.DASHED,
+                             line_width=2.0,
+                             error_display="bar").with_color(ss.colors[1])  # B
+overlay([hx, hy], ratio=True, labels=["ref", "B"], styles=[sx, sy])
+```
+
+![Ratio panel with styled B](../assets/examples/mpl_ratio_styled.png)
+
 #### Passing an existing axes
 
 `overlay()` accepts a single axes object and draws all histograms into it.

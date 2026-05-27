@@ -1,33 +1,66 @@
-# Repository Structure
+# CLAUDE.md
 
-The repository is structured as follows:
-- `unrooted` the location of all the library code
-    - subdirectories would be:
-        - `core` all the core code including data structures, utilities, etc.
-        - `io/<backend>`the reading code 
-        - `plot` and `plot/<backend>` 
-- `tests` the location of all tests:
-    - subdirectory `unit_tests` for all the unit tests, which are called `test_core_<module>.py`, `test_io_<backend>_<module>.py` etc.
-    - subdirectory `data/<backend>` for necessary data required for running the tests
-- `resources` a resources directory that contains logos and color palettes for customizing plots
-    - examples are: `sd` sample detector (for unit tests and examples), `odd` for the open data detector
-- `docs` for documentation
-    
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# Developer guide
+## Common Commands
 
-For each new topical development, make a new feature branch that follows semantic reasoning. E.g. if support for profile histograms
-is added, the plan starts with a new feature branch `feat-support-profile-histogram`, if a fix is done `fix-issue-whatever`, and if
-infrastructure is changed, one would usually do `chore-reoder-files` or something similar.
+```bash
+# Install with all dev extras
+uv sync --extra dev --extra plotly
 
-# Coding Style and Type Checking
+# Run all tests
+uv run pytest tests/unit_tests/
 
-Coding style and type checking is done using `PEP 8`, `Ruff` and `pyright`.
+# Run a single test file
+uv run pytest tests/unit_tests/test_core_histogram.py
 
-# Dependency management 
+# Run a single test by name
+uv run pytest tests/unit_tests/test_core_histogram.py::test_histogram_errors
 
-Package dependency management is done using `uv` 
+# Lint
+uv run ruff check unrooted/
 
-# Testing
+# Type check
+uv run pyright
 
-All modules are unit tested using the `pytest` framework.
+# Run an example script
+uv run python tests/examples/example_styled_histogram.py
+
+# Regenerate stylesheet preview PNGs (after changing colors.json)
+uv run python -c "from unrooted.plot.mpl.stylesheet import generate_stylesheet; generate_stylesheet('odd'); generate_stylesheet('sd')"
+```
+
+## Architecture
+
+The library has three independent layers that compose through the `Histogram` dataclass:
+
+**I/O → Core → Plot**
+
+### Core (`unrooted/core/`)
+- `Axis`: bin edges + label; computed properties `centers`, `widths`, `n_bins`
+- `Histogram`: numpy-backed dataclass — `axes`, `values`, `variances`, `overflow`, and optional `spread_min`/`spread_max` (populated for TProfile and efficiency histograms)
+
+### I/O (`unrooted/io/<backend>/`)
+Every reader returns a `Histogram`. Currently only the ROOT backend exists:
+- `reader.load(path, key)` — reads TH1/TH2/TProfile via uproot; TProfile populates `spread_min`/`spread_max` as mean ± σ_y
+- `reader.load_efficiency(path, pass_key, total_key)` — computes binomial efficiency from two TH1s; uproot cannot read `TEfficiency` natively
+
+### Plot (`unrooted/plot/`)
+- `style.HistogramStyle` — single dataclass controlling line, fill, marker, error, and spread rendering
+- `style_set.StyleSet` — loads `resources/{target}/colors.json` and combines four palette colors with four `_STYLE_TEMPLATES` (line style + marker combinations) into a ready-to-use `styles` list; index wraps cyclically
+- `mpl/histogram.plot()` — dispatches to `_plot_1d`, `_plot_1d_styled`, or `_plot_2d`; `_plot_1d_styled` renders in five ordered layers: fill → line → markers → errors → spread
+- `mpl/overlay.overlay()` — multi-histogram overlay with optional ratio panel
+- `mpl/_range._draw_range()` — shared primitive for both error bars and filled bands, used by both the histogram and overlay modules
+- `mpl/stylesheet.generate_stylesheet()` — renders a palette preview PNG; called as part of resource updates
+- `plotly/` and `terminal/` — alternative backends with the same `plot()` entry point
+
+### Resources (`resources/<target>/`)
+Each target (e.g. `odd`, `sd`) contains `colors.json` (4-color palette) and logo assets. `StyleSet.load(target)` is the only consumer of `colors.json`.
+
+## Developer guide
+
+Branch naming: `feat-<topic>`, `fix-<topic>`, `chore-<topic>`.
+
+Test files follow: `test_core_<module>.py`, `test_io_<backend>_<module>.py`, `test_plot_<backend>_<module>.py`.
+
+Coding style: PEP 8 enforced by Ruff; static types checked by pyright (Python 3.11+).

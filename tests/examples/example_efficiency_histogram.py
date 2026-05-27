@@ -26,17 +26,9 @@ def main() -> None:
     print(f"  values range: [{eff.values.min():.3f}, {eff.values.max():.3f}]")
     print(f"  spread available: {eff.spread_min is not None}")
 
-    # Plot efficiency with Gaussian ±σ error bars and CI band
-    style_bar = HistogramStyle(
-        line_color=ss[0].line_color,
-        marker="o",
-        marker_size=5,
-        fill_alpha=0.12,
-        error_display="bar",
-        spread_display="band",
-    )
+    # as_efficiency() preset: markers + error bars + spread band
     fig, ax = plt.subplots(figsize=(8, 5))
-    plot(eff, ax=ax, style=style_bar)
+    plot(eff, ax=ax, style=HistogramStyle.as_efficiency().with_color(ss.colors[0]))
     ax.set_ylim(0, 1.1)
     ax.axhline(1.0, color="gray", linestyle=":", linewidth=0.8)
     ax.set_title("Efficiency: passed / total with ±σ Gaussian CI")
