@@ -13,6 +13,7 @@ from matplotlib.axes import Axes as MplAxes
 from unrooted.core.axis import Axis
 from unrooted.core.histogram import Histogram
 from unrooted.plot.mpl.overlay import overlay
+from unrooted.plot.style import HistogramStyle
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "root"
 
@@ -185,3 +186,64 @@ def test_overlay_root_hx_hy_ratio():
     main_ax, ratio_ax = overlay([hx, hy], ratio=True, labels=["hx", "hy"])
     assert isinstance(main_ax, MplAxes)
     assert isinstance(ratio_ax, MplAxes)
+
+
+# ---------------------------------------------------------------------------
+# Ratio panel inherits style of B
+# ---------------------------------------------------------------------------
+
+
+def test_ratio_panel_uses_b_line_color():
+    """The step line in the ratio panel must use B's line_color."""
+    h1 = _make_hist([2.0, 4.0])
+    h2 = _make_hist([4.0, 8.0])
+    s1 = HistogramStyle(line_color="#aaaaaa", error_display=None)
+    s2 = HistogramStyle(line_color="#3A6FA8", error_display=None)
+    _, ratio_ax = overlay([h1, h2], ratio=True, styles=[s1, s2])
+    assert ratio_ax is not None
+    # ax.stairs() adds a StepPatch; its edge color must match B's line_color.
+    from matplotlib.patches import StepPatch
+    step_patches = [a for a in ratio_ax.get_children() if isinstance(a, StepPatch)]
+    assert step_patches, "expected at least one StepPatch in ratio panel"
+    import matplotlib.colors as mcolors
+    colors_hex = [
+        mcolors.to_hex(p.get_edgecolor()) for p in step_patches
+    ]
+    assert any(c == "#3a6fa8" for c in colors_hex)
+
+
+def test_ratio_panel_no_errors_when_error_display_none():
+    """When style has error_display=None, ratio panel must draw no error bars."""
+    h1 = _make_hist([2.0, 4.0])
+    h2 = _make_hist([4.0, 8.0])
+    s1 = HistogramStyle(line_color="C0", error_display=None)
+    s2 = HistogramStyle(line_color="C1", error_display=None)
+    _, ratio_ax = overlay([h1, h2], ratio=True, styles=[s1, s2])
+    assert ratio_ax is not None
+    assert len(ratio_ax.containers) == 0
+
+
+def test_ratio_panel_has_errors_when_error_display_bar():
+    """When style has error_display='bar', ratio panel must draw error bars."""
+    h1 = _make_hist([2.0, 4.0])
+    h2 = _make_hist([4.0, 8.0])
+    s1 = HistogramStyle(line_color="C0", error_display="bar")
+    s2 = HistogramStyle(line_color="C1", error_display="bar")
+    _, ratio_ax = overlay([h1, h2], ratio=True, styles=[s1, s2])
+    assert ratio_ax is not None
+    assert len(ratio_ax.containers) == 1
+
+
+def test_ratio_panel_uses_b_line_style():
+    """The step line in the ratio panel must use B's line_style and line_width."""
+    h1 = _make_hist([2.0, 4.0])
+    h2 = _make_hist([4.0, 8.0])
+    s1 = HistogramStyle(line_color="C0")
+    s2 = HistogramStyle(line_color="C1", line_style="--", line_width=2.5)
+    _, ratio_ax = overlay([h1, h2], ratio=True, styles=[s1, s2])
+    assert ratio_ax is not None
+    # StepPatch linewidth reflects line_width of B
+    from matplotlib.patches import StepPatch
+    step_patches = [a for a in ratio_ax.get_children() if isinstance(a, StepPatch)]
+    widths = [a.get_linewidth() for a in step_patches]
+    assert any(abs(w - 2.5) < 0.01 for w in widths)

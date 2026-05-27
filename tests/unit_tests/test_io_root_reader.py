@@ -163,7 +163,10 @@ def test_load_efficiency_known_values():
 
 def test_load_efficiency_shape_mismatch_files():
     """Mismatched bin counts raise ValueError."""
-    import uproot, tempfile, numpy as np
+    import tempfile
+
+    import numpy as np
+    import uproot
     edges_a = np.linspace(0, 1, 11)   # 10 bins
     edges_b = np.linspace(0, 1, 6)    # 5 bins
     with tempfile.NamedTemporaryFile(suffix=".root", delete=False) as tmp:

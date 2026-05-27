@@ -103,3 +103,28 @@ bars show the Gaussian ±σ confidence interval, clamped to [0, 1].
 === "Matplotlib"
 
     ![Efficiency with CI band](../assets/examples/mpl_efficiency.png)
+
+---
+
+## Named style presets
+
+All five presets applied to the same histogram with the ODD primary color.
+
+![Named style presets](../assets/examples/mpl_style_presets.png)
+
+| Preset | Line | Marker | Fill | Errors | Spread |
+|--------|------|--------|------|--------|--------|
+| `as_hist()` | solid | – | ✓ | bar | – |
+| `as_line()` | solid | – | – | – | – |
+| `as_markers()` | – | ○ | – | bar | – |
+| `as_efficiency()` | – | ○ | – | bar | band |
+| `as_profile()` | solid | – | – | bar | band |
+
+---
+
+## Ratio panel with styled B
+
+The ratio panel inherits the line color, line style, width, and error display
+from B's `HistogramStyle`.  Here B is drawn with a dashed line.
+
+![Ratio panel with styled B](../assets/examples/mpl_ratio_styled.png)
