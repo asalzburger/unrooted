@@ -47,17 +47,27 @@ def overlay(
     hists: list[Histogram],
     labels: list[str] | None = None,
     max_lines: int = 40,
+    *,
+    ratio: bool = False,
+    ratio_lines: int = 10,
 ) -> str:
     """Overlay multiple 1D histograms and render as a unicode string.
 
     Cells where two or more histograms are present at the same height
     are rendered with a composite glyph (e.g. ○ + ✚ → ⊕).
 
+    When *ratio* is ``True`` and at least two histograms are given, a ratio
+    panel is appended below the main plot.  The ratio = 1 row is drawn as a
+    dotted reference line (``·``); when a symbol lands exactly on that row it
+    replaces the dot.
+
     Args:
-        hists:     1D histograms to overlay.  At most 4 are supported, and
-                   all must have the same number of bins.
-        labels:    Optional legend labels, one per histogram.
-        max_lines: Height of the plot area in terminal rows (minimum 5).
+        hists:       1D histograms to overlay.  At most 4 are supported, and
+                     all must have the same number of bins.
+        labels:      Optional legend labels, one per histogram.
+        max_lines:   Height of the plot area in terminal rows (minimum 5).
+        ratio:       When ``True``, append a ratio panel (requires ≥ 2 hists).
+        ratio_lines: Height of the ratio panel in rows (minimum 4).
 
     Returns:
         A multi-line unicode string.  Pass it to ``print()`` to display.
@@ -91,4 +101,6 @@ def overlay(
         title=hists[0].title or '',
         x_label=hists[0].axes[0].label or '',
         labels=labels,
+        ratio=ratio,
+        ratio_lines=ratio_lines,
     )

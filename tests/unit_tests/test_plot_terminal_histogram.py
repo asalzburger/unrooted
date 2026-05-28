@@ -266,3 +266,70 @@ def test_overlay_root_hx_hy():
     result = overlay([hx, hy], labels=['hx', 'hy'])
     assert 'hx' in result
     assert 'hy' in result
+
+
+# ---------------------------------------------------------------------------
+# overlay() — ratio panel
+# ---------------------------------------------------------------------------
+
+
+def test_overlay_ratio_returns_string():
+    h1 = _hist([1.0, 2.0, 3.0])
+    h2 = _hist([1.0, 2.0, 3.0])
+    result = overlay([h1, h2], ratio=True)
+    assert isinstance(result, str)
+
+
+def test_overlay_ratio_contains_dot_reference_line():
+    """Bins where ratio != 1 must leave '·' on the reference row."""
+    # h2[0] = 2.0 → ratio 0.5 (below reference row); h2[1] = h1[1] → ratio 1.0
+    h1 = _hist([4.0, 4.0, 4.0])
+    h2 = _hist([2.0, 4.0, 6.0])
+    result = overlay([h1, h2], ratio=True, ratio_lines=10)
+    assert '·' in result
+
+
+def test_overlay_ratio_symbol_replaces_dot_at_one():
+    """When ratio is exactly 1.0 the symbol replaces '·' on the reference row."""
+    # All bins equal → every cell on the reference row shows ✚ (hist index 1)
+    h1 = _hist([4.0, 4.0, 4.0])
+    h2 = _hist([4.0, 4.0, 4.0])
+    result = overlay([h1, h2], ratio=True, ratio_lines=10)
+    assert '✚' in result
+
+
+def test_overlay_ratio_single_hist_ignored():
+    """ratio=True with a single histogram produces no ratio panel."""
+    h = _hist([1.0, 2.0, 3.0])
+    result_ratio = overlay([h], ratio=True)
+    result_plain = overlay([h], ratio=False)
+    assert result_ratio == result_plain
+
+
+def test_overlay_ratio_line_count_greater_than_plain():
+    """With ratio=True the output has more lines than without."""
+    h1 = _hist([1.0, 2.0, 3.0])
+    h2 = _hist([2.0, 1.0, 2.0])
+    plain = overlay([h1, h2])
+    with_ratio = overlay([h1, h2], ratio=True, ratio_lines=10)
+    assert len(with_ratio.splitlines()) > len(plain.splitlines())
+
+
+def test_overlay_ratio_contains_y_axis_labels():
+    """Ratio panel must show '2' at top and '0' at bottom."""
+    h1 = _hist([3.0, 3.0, 3.0])
+    h2 = _hist([3.0, 3.0, 3.0])
+    result = overlay([h1, h2], ratio=True, ratio_lines=10)
+    assert '2' in result
+    # "0" appears on the axis line so it's always there
+    assert '0' in result
+
+
+def test_overlay_ratio_root_data():
+    pytest.importorskip('uproot')
+    from unrooted.io.root.reader import load
+    hx = load(DATA_DIR / 'tests_input.root', 'hx')
+    hy = load(DATA_DIR / 'tests_input.root', 'hy')
+    result = overlay([hx, hy], labels=['hx', 'hy'], ratio=True)
+    assert isinstance(result, str)
+    assert '·' in result

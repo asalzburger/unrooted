@@ -125,6 +125,10 @@ def _gen_terminal() -> None:
     (_OUT / "terminal_overlay.txt").write_text(
         overlay([hx, hy], labels=["hx", "hy"], max_lines=20), encoding="utf-8"
     )
+    (_OUT / "terminal_overlay_ratio.txt").write_text(
+        overlay([hx, hy], labels=["hx", "hy"], max_lines=20, ratio=True),
+        encoding="utf-8",
+    )
 
 
 def _gen_profile() -> None:
