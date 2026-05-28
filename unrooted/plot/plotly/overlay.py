@@ -44,7 +44,7 @@ def overlay(
             cols=1,
             row_heights=[3, 1],
             shared_xaxes=True,
-            vertical_spacing=0.05,
+            vertical_spacing=0.025,
         )
     else:
         fig = go.Figure()

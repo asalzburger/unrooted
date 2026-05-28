@@ -41,7 +41,7 @@ def overlay(
 
     if ratio:
         _, subaxes = plt.subplots(
-            2, 1, gridspec_kw={"height_ratios": [3, 1]}, sharex=True
+            2, 1, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.1}, sharex=True
         )
         main_ax = cast(MplAxes, subaxes[0])
         ax_ratio = cast(MplAxes, subaxes[1])
