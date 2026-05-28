@@ -58,6 +58,12 @@ palette from [`StyleSet`][unrooted.plot.style_set.StyleSet].
     --8<-- "assets/examples/terminal_overlay.txt"
     ```
 
+=== "Terminal with ratio"
+
+    ```
+    --8<-- "assets/examples/terminal_overlay_ratio.txt"
+    ```
+
 ---
 
 ## 2D histogram
