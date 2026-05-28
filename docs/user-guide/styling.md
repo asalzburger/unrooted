@@ -200,7 +200,7 @@ overlay([h1, h2, h3, h4],
 | Target | a | b | c | d | Description |
 |--------|---|---|---|---|-------------|
 | `"odd"` | `#3A6FA8` steel blue | `#E8721A` vivid orange | `#5BB8A8` teal | `#9B2020` dark crimson | OpenDataDetector |
-| `"sd"` | `#BF1565` deep magenta | `#557A1C` forest green | `#E91E8C` bright pink | `#8BC34A` lime green | Super Duper |
+| `"sd"` | `#00F5D4` teal | `#7B2CBF` purple | `#F15BB5` pink | `#FEE440` yellow | Super Duper |
 
 ### Palette previews
 
