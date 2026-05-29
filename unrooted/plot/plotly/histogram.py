@@ -234,6 +234,32 @@ def _add_1d_traces(
             ),
             **add_kw,
         )
+    elif style.error_display == "continuous":
+        error_color = style.error_color if style.error_color is not None else color
+        fig.add_trace(
+            go.Scatter(
+                x=centers,
+                y=values + errors,
+                mode="lines",
+                line=dict(width=0),
+                showlegend=False,
+                hoverinfo="skip",
+            ),
+            **add_kw,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=centers,
+                y=values - errors,
+                mode="lines",
+                line=dict(width=0),
+                fill="tonexty",
+                fillcolor=_to_rgba(error_color, style.error_alpha),
+                showlegend=False,
+                hoverinfo="skip",
+            ),
+            **add_kw,
+        )
 
     # 5. Spread display
     if style.spread_display is not None:
@@ -263,7 +289,7 @@ def _add_1d_traces(
                 ),
                 **add_kw,
             )
-        else:  # band
+        elif style.spread_display == "band":
             _, y_hi_s = _staircase(edges, hist.spread_max)
             _, y_lo_s = _staircase(edges, hist.spread_min)
             fig.add_trace(
@@ -281,6 +307,31 @@ def _add_1d_traces(
                 go.Scatter(
                     x=x_step,
                     y=y_lo_s,
+                    mode="lines",
+                    line=dict(width=0),
+                    fill="tonexty",
+                    fillcolor=_to_rgba(spread_color, style.spread_alpha),
+                    showlegend=False,
+                    hoverinfo="skip",
+                ),
+                **add_kw,
+            )
+        else:  # continuous
+            fig.add_trace(
+                go.Scatter(
+                    x=centers,
+                    y=hist.spread_max,
+                    mode="lines",
+                    line=dict(width=0),
+                    showlegend=False,
+                    hoverinfo="skip",
+                ),
+                **add_kw,
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=centers,
+                    y=hist.spread_min,
                     mode="lines",
                     line=dict(width=0),
                     fill="tonexty",

@@ -25,8 +25,8 @@ class StyleTemplate:
         marker:         Matplotlib marker code or ``None`` for no marker.
         marker_size:    Marker size in points.
         fill_alpha:     Fill opacity under the step function; ``None`` → no fill.
-        error_display:  ``"bar"``, ``"band"``, or ``None``.
-        spread_display: ``"bar"``, ``"band"``, or ``None``.
+        error_display:  ``"bar"``, ``"band"``, ``"continuous"``, or ``None``.
+        spread_display: ``"bar"``, ``"band"``, ``"continuous"``, or ``None``.
     """
 
     line_style: str | None = "-"
@@ -34,8 +34,8 @@ class StyleTemplate:
     marker: str | None = None
     marker_size: float = 5.0
     fill_alpha: float | None = None
-    error_display: Literal["bar", "band"] | None = "bar"
-    spread_display: Literal["bar", "band"] | None = None
+    error_display: Literal["bar", "band", "continuous"] | None = "bar"
+    spread_display: Literal["bar", "band", "continuous"] | None = None
 
 
 DEFAULT_STYLE_TEMPLATES: list[StyleTemplate] = [

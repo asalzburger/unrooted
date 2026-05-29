@@ -30,6 +30,10 @@ class HistogramStyle:
     * :meth:`as_markers`     — markers at bin centres + error bars
     * :meth:`as_efficiency`  — markers + error bars + spread band
     * :meth:`as_profile`     — line + spread band (TProfile)
+
+    ``error_display`` and ``spread_display`` each accept ``"bar"`` (error bars
+    at bin centres), ``"band"`` (step-shaped filled area following bin edges),
+    or ``"continuous"`` (smooth filled envelope connecting bin centres).
     """
 
     # --- Line (step function) ---
@@ -50,13 +54,13 @@ class HistogramStyle:
     fill_hatch: str | None = None                       # e.g. "/", "x", "."
 
     # --- Error display (bin ± sqrt(variance)) ---
-    error_display: Literal["bar", "band"] | None = "bar"
+    error_display: Literal["bar", "band", "continuous"] | None = "bar"
     error_color: str | tuple[float, ...] | None = None  # None → same as line
-    error_alpha: float = 0.4                            # opacity for "band"
+    error_alpha: float = 0.4                      # opacity for "band" / "continuous"
     error_capsize: float = 2.0                          # cap size for "bar"
 
     # --- Spread display (Histogram.spread_min / spread_max) ---
-    spread_display: Literal["bar", "band"] | None = None
+    spread_display: Literal["bar", "band", "continuous"] | None = None
     spread_color: str | tuple[float, ...] | None = None # None → same as line
     spread_alpha: float = 0.15
     spread_capsize: float = 2.0
