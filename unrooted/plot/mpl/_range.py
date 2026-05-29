@@ -13,7 +13,7 @@ def _draw_range(
     lo: np.ndarray,
     hi: np.ndarray,
     edges: np.ndarray,
-    mode: Literal["bar", "band"],
+    mode: Literal["bar", "band", "continuous"],
     color: str | tuple[float, ...],
     alpha: float,
     capsize: float = 2.0,
@@ -26,7 +26,10 @@ def _draw_range(
         lo:      Absolute lower bound per bin.
         hi:      Absolute upper bound per bin.
         edges:   Bin edges (used to build the step shape for band mode).
-        mode:    ``"bar"`` for error bars, ``"band"`` for a filled band.
+        mode:    ``"bar"`` for error bars at bin centres; ``"band"`` for a
+                 step-shaped filled area that follows the bin edges;
+                 ``"continuous"`` for a smooth filled envelope connecting
+                 bin centres.
         color:   Matplotlib color spec.
         alpha:   Opacity.
         capsize: Cap size in points (bar mode only).
@@ -41,8 +44,10 @@ def _draw_range(
             alpha=alpha,
             capsize=capsize,
         )
-    else:
+    elif mode == "band":
         x_step = np.repeat(edges, 2)[1:-1]
         lo_step = np.repeat(lo, 2)
         hi_step = np.repeat(hi, 2)
         ax.fill_between(x_step, lo_step, hi_step, color=color, alpha=alpha)
+    else:  # continuous
+        ax.fill_between(centers, lo, hi, color=color, alpha=alpha)

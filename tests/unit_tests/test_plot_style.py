@@ -85,6 +85,33 @@ def test_draw_range_band_adds_poly_collection():
     assert len(poly_collections) == 1
 
 
+def test_draw_range_continuous_adds_poly_collection():
+    ax = _fresh_ax()
+    centers = np.array([0.5, 1.5])
+    values = np.array([2.0, 3.0])
+    lo = values - 0.5
+    hi = values + 0.5
+    edges = np.array([0.0, 1.0, 2.0])
+    _draw_range(ax, centers, values, lo, hi, edges, "continuous", "green", 0.3)
+    poly_collections = [c for c in ax.collections if isinstance(c, PolyCollection)]
+    assert len(poly_collections) == 1
+
+
+def test_draw_range_continuous_uses_centers_not_edges():
+    """The x-coordinates of the continuous band must match bin centres, not edges."""
+    ax = _fresh_ax()
+    centers = np.array([0.5, 1.5, 2.5])
+    values = np.array([1.0, 2.0, 3.0])
+    lo = values - 0.3
+    hi = values + 0.3
+    edges = np.array([0.0, 1.0, 2.0, 3.0])
+    _draw_range(ax, centers, values, lo, hi, edges, "continuous", "blue", 0.2)
+    poly = [c for c in ax.collections if isinstance(c, PolyCollection)][0]
+    # fill_between with 3 centers produces a single polygon path with 3 unique x coords
+    x_coords = np.unique(np.concatenate([path.vertices[:, 0] for path in poly.get_paths()]))
+    assert len(x_coords) == len(centers)
+
+
 def test_draw_range_bar_midpoints_correct():
     ax = _fresh_ax()
     centers = np.array([0.5, 1.5])
@@ -167,6 +194,28 @@ def test_plot_styled_spread_band():
         ax=ax,
         style=HistogramStyle(error_display=None, spread_display="band"),
     )
+    poly = [c for c in ax.collections if isinstance(c, PolyCollection)]
+    assert len(poly) == 1
+
+
+def test_plot_styled_spread_continuous():
+    h = _hist([4.0, 9.0])
+    h.spread_min = np.array([2.0, 5.0])
+    h.spread_max = np.array([6.0, 13.0])
+    ax = _fresh_ax()
+    plot(
+        h,
+        ax=ax,
+        style=HistogramStyle(error_display=None, spread_display="continuous"),
+    )
+    poly = [c for c in ax.collections if isinstance(c, PolyCollection)]
+    assert len(poly) == 1
+
+
+def test_plot_styled_error_continuous():
+    h = _hist([4.0, 9.0])
+    ax = _fresh_ax()
+    plot(h, ax=ax, style=HistogramStyle(error_display="continuous"))
     poly = [c for c in ax.collections if isinstance(c, PolyCollection)]
     assert len(poly) == 1
 
