@@ -112,19 +112,51 @@ hex (`"#3A6FA8"`), or RGBA tuple (`(0.23, 0.44, 0.66, 1.0)`).
 
 | Field | Default | Effect |
 |-------|---------|--------|
-| `error_display` | `"bar"` | `"bar"` (±√var error bars), `"band"` (shaded), `None` |
+| `error_display` | `"bar"` | `"bar"`, `"band"`, `"continuous"`, or `None` — see [display modes](#error-and-spread-display-modes) |
 | `error_color` | `None` | Defaults to `line_color` |
-| `error_alpha` | `0.4` | Opacity for band mode |
-| `error_capsize` | `2.0` | Cap size in points (bar mode only) |
+| `error_alpha` | `0.4` | Opacity for `"band"` and `"continuous"` modes |
+| `error_capsize` | `2.0` | Cap size in points (`"bar"` mode only) |
 
 #### Spread (profile / efficiency histograms)
 
 | Field | Default | Effect |
 |-------|---------|--------|
-| `spread_display` | `None` | `"bar"` or `"band"` to show `spread_min`/`spread_max` |
+| `spread_display` | `None` | `"bar"`, `"band"`, `"continuous"`, or `None` to show `spread_min`/`spread_max` |
 | `spread_color` | `None` | Defaults to `line_color` |
-| `spread_alpha` | `0.15` | Opacity (band mode) |
-| `spread_capsize` | `2.0` | Cap size in points (bar mode only) |
+| `spread_alpha` | `0.15` | Opacity for `"band"` and `"continuous"` modes |
+| `spread_capsize` | `2.0` | Cap size in points (`"bar"` mode only) |
+
+#### Error and spread display modes
+
+Both `error_display` and `spread_display` accept the same three modes:
+
+| Mode | Description |
+|------|-------------|
+| `"bar"` | Error-bar ticks with caps drawn at each bin centre |
+| `"band"` | Step-shaped filled area that follows the bin edges |
+| `"continuous"` | Smooth filled envelope connecting bin centres (`fill_between`) |
+
+```python
+from unrooted.plot.style import HistogramStyle
+from unrooted.plot.style_set import StyleSet
+
+ss = StyleSet.load("odd")
+hist = ...  # Histogram with spread_min / spread_max (TProfile or efficiency)
+
+# Ticks at bin centres
+style_bar = HistogramStyle.as_profile(spread_display="bar").with_color(ss.colors[0])
+
+# Step-shaped fill following bin edges
+style_band = HistogramStyle.as_profile(spread_display="band").with_color(ss.colors[1])
+
+# Smooth fill_between connecting bin centres
+style_cont = HistogramStyle.as_profile(spread_display="continuous").with_color(ss.colors[2])
+```
+
+Choose `"band"` when the bin boundaries matter visually (it preserves the
+histogram's step structure).  Choose `"continuous"` for a cleaner, flowing
+envelope — particularly useful for profile histograms with many narrow bins or
+when the spread is meant to represent a smooth underlying function.
 
 ---
 

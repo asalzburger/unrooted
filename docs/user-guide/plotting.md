@@ -53,7 +53,7 @@ style = HistogramStyle(
     marker="o",
     fill_alpha=0.15,
     error_display="bar",
-    spread_display="band",
+    spread_display="band",   # "bar", "band", or "continuous"
 )
 ax = plot(h, style=style)
 ```
@@ -168,7 +168,7 @@ from unrooted.plot import HistogramStyle
 fig = plot(h, style=HistogramStyle(
     line_color="#1A4F8A",
     fill_alpha=0.15,
-    error_display="band",
+    error_display="band",   # "bar", "band", or "continuous"
 ))
 fig.show()
 ```
