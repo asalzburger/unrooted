@@ -65,6 +65,7 @@ nav:
     - Histograms & Axes: user-guide/histograms.md
     - Plotting: user-guide/plotting.md
     - Styles & Themes: user-guide/styling.md
+    - Command-line interface: user-guide/cli.md
     - Resources: user-guide/resources.md
     - Examples: user-guide/examples.md
   - API Reference:

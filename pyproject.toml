@@ -12,6 +12,9 @@ dependencies = [
     "matplotlib",
 ]
 
+[project.scripts]
+unrooted = "unrooted.cli.main:main"
+
 [project.urls]
 Homepage = "https://asalzburger.github.io/unrooted"
 Repository = "https://github.com/asalzburger/unrooted"
@@ -49,4 +52,5 @@ pythonVersion = "3.11"
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
+    "ruff>=0.15.15",
 ]
