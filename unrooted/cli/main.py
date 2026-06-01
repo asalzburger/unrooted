@@ -93,6 +93,7 @@ def _run_mpl(args, hists, labels, styles, ratio) -> None:
 
     xlim = tuple(args.xlim) if args.xlim else None
     ylim = tuple(args.ylim) if args.ylim else None
+    ratio_range = tuple(args.ratio_range) if args.ratio_range else None
 
     if len(hists) == 1 and hists[0].ndim == 2:
         ax = mpl_plot(hists[0], style=styles[0])
@@ -100,7 +101,13 @@ def _run_mpl(args, hists, labels, styles, ratio) -> None:
         _apply_mpl_axes(ax, args.title, xlim, ylim)
     else:
         show_labels = labels if any(labels) else None
-        ax_main, _ = mpl_overlay(hists, labels=show_labels, styles=styles, ratio=ratio)
+        ax_main, _ = mpl_overlay(
+            hists,
+            labels=show_labels,
+            styles=styles,
+            ratio=ratio,
+            ratio_range=ratio_range,
+        )
         fig = ax_main.get_figure()
         _apply_mpl_axes(ax_main, args.title, xlim, ylim)
 
@@ -121,11 +128,19 @@ def _run_plotly(args, hists, labels, styles, ratio) -> None:
             "Plotly is not installed. Install it with: pip install 'unrooted[plotly]'"
         )
 
+    ratio_range = tuple(args.ratio_range) if args.ratio_range else None
+
     if len(hists) == 1:
         fig = plotly_plot(hists[0], style=styles[0])
     else:
         show_labels = labels if any(labels) else None
-        fig = plotly_overlay(hists, labels=show_labels, styles=styles, ratio=ratio)
+        fig = plotly_overlay(
+            hists,
+            labels=show_labels,
+            styles=styles,
+            ratio=ratio,
+            ratio_range=ratio_range,
+        )
 
     if args.title:
         fig.update_layout(title_text=args.title)
@@ -190,6 +205,13 @@ draw spec format
     --add spread_continuous
     --add ratio:spread_band            (colon-joined)
     --add error_band --add spread_none (repeated)
+
+ratio panel
+-----------
+  --ratio-range MIN MAX  fix the ratio panel y-axis (requires --add ratio)
+
+  Example:
+    --add ratio --ratio-range 0.5 1.5
 """,
     )
 
@@ -289,6 +311,13 @@ draw spec format
         type=float,
         metavar=("MIN", "MAX"),
         help="Y-axis limits",
+    )
+    plot_grp.add_argument(
+        "--ratio-range",
+        nargs=2,
+        type=float,
+        metavar=("MIN", "MAX"),
+        help="Y-axis limits for the ratio panel (requires --add ratio)",
     )
 
     branch_grp = p.add_argument_group("branch loading (branch: draw type only)")
