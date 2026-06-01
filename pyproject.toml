@@ -12,6 +12,9 @@ dependencies = [
     "matplotlib",
 ]
 
+[project.scripts]
+unrooted = "unrooted.cli.main:main"
+
 [project.urls]
 Homepage = "https://asalzburger.github.io/unrooted"
 Repository = "https://github.com/asalzburger/unrooted"
