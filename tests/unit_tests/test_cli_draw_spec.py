@@ -36,15 +36,15 @@ def test_prof_simple():
 
 def test_prof_colon_path():
     # colons inside the key are treated as path separators
-    s = parse_draw_spec("prof:nSensitivies:eta")
+    s = parse_draw_spec("prof:somedata:someref")
     assert s.draw_type == "prof"
-    assert s.keys == ["nSensitivies/eta"]
+    assert s.keys == ["somedata/someref"]
 
 
 def test_prof_slash_path():
-    s = parse_draw_spec("prof:nSensitivies/eta")
+    s = parse_draw_spec("prof:somedata/someref")
     assert s.draw_type == "prof"
-    assert s.keys == ["nSensitivies/eta"]
+    assert s.keys == ["somedata/someref"]
 
 
 def test_prof_alias_profile():

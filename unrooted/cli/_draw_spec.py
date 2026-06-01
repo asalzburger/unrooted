@@ -51,8 +51,8 @@ def parse_draw_spec(spec: str) -> DrawSpec:
 
     For ``hist``, ``prof``, and ``th2`` types any colons inside the key path are
     treated as path separators and joined with ``/``, so both
-    ``prof:nSensitivies/eta`` and ``prof:nSensitivies:eta`` resolve to the same
-    ROOT path ``nSensitivies/eta``.
+    ``prof:somedata/eta`` and ``prof:somedata:eta`` resolve to the same
+    ROOT path ``somedata/eta``.
 
     Args:
         spec: Raw draw specification string from the command line.
