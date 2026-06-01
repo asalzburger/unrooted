@@ -223,6 +223,14 @@ def test_ratio_panel_no_errors_when_error_display_none():
     assert len(ratio_ax.containers) == 0
 
 
+def test_ratio_range_sets_ylim():
+    h1 = _make_hist([2.0, 4.0])
+    h2 = _make_hist([4.0, 8.0])
+    _, ratio_ax = overlay([h1, h2], ratio=True, ratio_range=(0.5, 1.5))
+    assert ratio_ax is not None
+    assert ratio_ax.get_ylim() == pytest.approx((0.5, 1.5))
+
+
 def test_ratio_panel_has_errors_when_error_display_bar():
     """When style has error_display='bar', ratio panel must draw error bars."""
     h1 = _make_hist([2.0, 4.0])

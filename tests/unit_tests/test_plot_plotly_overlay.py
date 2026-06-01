@@ -69,6 +69,13 @@ def test_overlay_ratio_yaxis2_title():
     assert fig.layout.yaxis2.title.text == "Ratio"
 
 
+def test_overlay_ratio_range_sets_yaxis2_range():
+    h1 = _hist([1.0, 2.0])
+    h2 = _hist([2.0, 4.0])
+    fig = overlay([h1, h2], ratio=True, ratio_range=(0.5, 1.5))
+    assert list(fig.layout.yaxis2.range) == pytest.approx([0.5, 1.5])
+
+
 def test_overlay_ratio_values_correct():
     h1 = _hist([2.0, 4.0], variances=[2.0, 4.0])
     h2 = _hist([4.0, 8.0], variances=[4.0, 8.0])

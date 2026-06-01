@@ -76,6 +76,14 @@ def test_parser_xlim_ylim():
     assert args.ylim == [0.0, 100.0]
 
 
+def test_parser_ratio_range():
+    p = build_parser()
+    args = p.parse_args(
+        ["--input", "f.root", "--draw", "hist:h", "--add", "ratio", "--ratio-range", "0.5", "1.5"]
+    )
+    assert args.ratio_range == [0.5, 1.5]
+
+
 def test_parser_backend_choices():
     p = build_parser()
     for backend in ("mpl", "plotly", "terminal"):

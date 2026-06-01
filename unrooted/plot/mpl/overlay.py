@@ -21,6 +21,7 @@ def overlay(
     hists: list[Histogram],
     ax: MplAxes | None = None,
     ratio: bool = False,
+    ratio_range: tuple[float, float] | None = None,
     labels: list[str] | None = None,
     styles: list[HistogramStyle] | None = None,
     **kwargs,
@@ -70,7 +71,7 @@ def overlay(
         main_ax.legend()
 
     if ax_ratio is not None:
-        _draw_ratio_panel(hists, ax_ratio, resolved_styles)
+        _draw_ratio_panel(hists, ax_ratio, resolved_styles, ratio_range=ratio_range)
 
     return main_ax, ax_ratio
 
@@ -79,6 +80,7 @@ def _draw_ratio_panel(
     hists: list[Histogram],
     ax_ratio: MplAxes,
     styles: list[HistogramStyle],
+    ratio_range: tuple[float, float] | None = None,
 ) -> None:
     ref_values = hists[0].values
     ref_errors = hists[0].errors
@@ -125,3 +127,5 @@ def _draw_ratio_panel(
 
     ax_ratio.axhline(1.0, color="black", linestyle="--", linewidth=0.8)
     ax_ratio.set_ylabel("Ratio")
+    if ratio_range is not None:
+        ax_ratio.set_ylim(*ratio_range)

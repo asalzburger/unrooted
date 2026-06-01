@@ -39,6 +39,17 @@ def main() -> None:
     main_ax.set_title("Overlay with ratio: hx (ref) vs hy — B's line style in ratio")
     main_ax.get_figure().tight_layout()  # type: ignore[union-attr]
 
+    # --- Overlay with ratio panel and fixed ratio y-axis range ---
+    main_ax2, ratio_ax2 = overlay(
+        [hx, hy],
+        ratio=True,
+        ratio_range=(0.5, 1.5),
+        labels=["hx", "hy"],
+        styles=[sx, sy],
+    )
+    main_ax2.set_title("Overlay with ratio range [0.5, 1.5]")
+    main_ax2.get_figure().tight_layout()  # type: ignore[union-attr]
+
     plt.show()
 
 

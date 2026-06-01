@@ -15,16 +15,19 @@ def overlay(
     labels: list[str] | None = None,
     styles: list[HistogramStyle] | None = None,
     ratio: bool = False,
+    ratio_range: tuple[float, float] | None = None,
 ) -> go.Figure:
     """Overlay multiple 1D histograms in a single interactive Plotly figure.
 
     Args:
-        hists:  1D histograms to overlay.
-        labels: Per-histogram legend labels.  Omit to hide the legend.
-        styles: Per-histogram visual styles.  When ``None``, styles are
-                assigned automatically from the default color sequence.
-        ratio:  When ``True``, add a ratio panel (``h_i / h_0``) below the
-                main plot.
+        hists:        1D histograms to overlay.
+        labels:       Per-histogram legend labels.  Omit to hide the legend.
+        styles:       Per-histogram visual styles.  When ``None``, styles are
+                      assigned automatically from the default color sequence.
+        ratio:        When ``True``, add a ratio panel (``h_i / h_0``) below
+                      the main plot.
+        ratio_range:  Optional ``(min, max)`` y-axis limits for the ratio panel.
+                      Ignored when *ratio* is ``False``.
 
     Returns:
         A :class:`plotly.graph_objects.Figure`.
@@ -75,7 +78,7 @@ def overlay(
             fig.update_xaxes(title_text=x_label)
 
     if ratio:
-        _add_ratio_panel(fig, hists, resolved_colors)
+        _add_ratio_panel(fig, hists, resolved_colors, ratio_range=ratio_range)
 
     return fig
 
@@ -84,6 +87,7 @@ def _add_ratio_panel(
     fig: go.Figure,
     hists: list[Histogram],
     colors: list[str | tuple[float, ...]],
+    ratio_range: tuple[float, float] | None = None,
 ) -> None:
     ref_values = hists[0].values
     ref_errors = hists[0].errors
@@ -151,3 +155,5 @@ def _add_ratio_panel(
         col=1,
     )
     fig.update_yaxes(title_text="Ratio", row=2, col=1)
+    if ratio_range is not None:
+        fig.update_yaxes(range=list(ratio_range), row=2, col=1)
