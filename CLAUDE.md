@@ -59,7 +59,7 @@ Each target (e.g. `odd`, `sd`) contains `colors.json` (4-color palette) and logo
 
 ## Developer guide
 
-**Always run `uv run ruff check unrooted/` before committing. Fix all errors before creating a commit.**
+**Always run `uv run ruff check unrooted/` and `uv run pyright` before committing. Fix all errors before creating a commit.**
 
 Branch naming: `feat-<topic>`, `fix-<topic>`, `chore-<topic>`.
 

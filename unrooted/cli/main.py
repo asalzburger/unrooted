@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import sys
+from collections.abc import Callable
 from typing import Literal
 
 from unrooted.plot.style import HistogramStyle
@@ -11,7 +12,7 @@ from unrooted.plot.style_set import StyleSet
 from ._draw_spec import AutoStyleHint, DrawSpec, parse_draw_spec
 from ._load import resolve_loads
 
-_STYLE_PRESETS: dict[str, type] = {
+_STYLE_PRESETS: dict[str, Callable[..., HistogramStyle]] = {
     "hist": HistogramStyle.as_hist,
     "line": HistogramStyle.as_line,
     "markers": HistogramStyle.as_markers,
@@ -19,7 +20,7 @@ _STYLE_PRESETS: dict[str, type] = {
     "profile": HistogramStyle.as_profile,
 }
 
-_AUTO_STYLE_MAP: dict[AutoStyleHint, type] = {
+_AUTO_STYLE_MAP: dict[AutoStyleHint, Callable[..., HistogramStyle]] = {
     "hist": HistogramStyle.as_hist,
     "profile": HistogramStyle.as_profile,
     "efficiency": HistogramStyle.as_efficiency,
@@ -85,6 +86,7 @@ def _apply_mpl_axes(ax, title: str, xlim, ylim) -> None:
 
 def _run_mpl(args, hists, labels, styles, ratio) -> None:
     import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure
 
     from unrooted.plot.mpl import overlay as mpl_overlay
     from unrooted.plot.mpl import plot as mpl_plot
@@ -102,10 +104,10 @@ def _run_mpl(args, hists, labels, styles, ratio) -> None:
         fig = ax_main.get_figure()
         _apply_mpl_axes(ax_main, args.title, xlim, ylim)
 
-    if fig:
+    if isinstance(fig, Figure):
         fig.tight_layout()
-    if args.output:
-        fig.savefig(args.output)
+        if args.output:
+            fig.savefig(args.output)
     if args.show or not args.output:
         plt.show()
 
