@@ -175,7 +175,7 @@ draw spec format
 
   Examples:
     --draw hist:hx
-    --draw prof:nSensitivies/eta          (same as prof:nSensitivies:eta)
+    --draw prof:somedata/eta          (same as prof:somedata:eta)
     --draw eff:h_passed:h_total
     --draw branch:myTree:eta:pt
 
