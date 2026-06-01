@@ -53,7 +53,11 @@ def _build_style(
     add_tokens: set[str],
     style_preset: str | None,
 ) -> HistogramStyle:
-    base_fn = _STYLE_PRESETS[style_preset] if style_preset else _AUTO_STYLE_MAP[spec.auto_style]
+    base_fn = (
+        _STYLE_PRESETS[style_preset]
+        if style_preset
+        else _AUTO_STYLE_MAP[spec.auto_style]
+    )
     style = base_fn()
 
     updates: dict[str, object] = {}
@@ -81,6 +85,7 @@ def _apply_mpl_axes(ax, title: str, xlim, ylim) -> None:
 
 def _run_mpl(args, hists, labels, styles, ratio) -> None:
     import matplotlib.pyplot as plt
+
     from unrooted.plot.mpl import overlay as mpl_overlay
     from unrooted.plot.mpl import plot as mpl_plot
 
@@ -144,7 +149,11 @@ def _run_terminal(args, hists, labels, ratio) -> None:
         print(term_plot(hists[0], max_lines=args.max_lines))
     else:
         show_labels = labels if any(labels) else None
-        print(term_overlay(hists, labels=show_labels, max_lines=args.max_lines, ratio=ratio))
+        print(
+            term_overlay(
+                hists, labels=show_labels, max_lines=args.max_lines, ratio=ratio
+            )
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -194,7 +203,10 @@ draw spec format
         "--source", "-s",
         default="",
         metavar="KEY",
-        help="Common path prefix inside the ROOT file(s), prepended to every histogram key",
+        help=(
+            "Common path prefix inside the ROOT file(s),"
+            " prepended to every histogram key"
+        ),
     )
     io_grp.add_argument(
         "--draw", "-d",
@@ -226,7 +238,10 @@ draw spec format
         "--label", "-l",
         nargs="+",
         metavar="LABEL",
-        help="Legend labels; one per histogram (default: histogram name or filename stem)",
+        help=(
+            "Legend labels; one per histogram"
+            " (default: histogram name or filename stem)"
+        ),
     )
     plot_grp.add_argument(
         "--backend",

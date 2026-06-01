@@ -54,7 +54,8 @@ def resolve_loads(
     Combining rules:
 
     * **1 file + N specs** — load each spec from the single file; label from spec key.
-    * **N files + 1 spec** — load the same spec from every file; label from filename stem.
+    * **N files + 1 spec** — load the same spec from every file; label from filename
+      stem.
     * **N files + N specs** — zip ``(file_i, spec_i)``; label from spec key.
 
     Returns:
