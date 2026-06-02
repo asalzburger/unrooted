@@ -11,6 +11,7 @@ from pathlib import Path
 _PROJECT_ROOT = Path(__file__).parent.parent
 _DATA = _PROJECT_ROOT / "tests" / "data" / "root" / "tests_input.root"
 _EFF_DATA = _PROJECT_ROOT / "tests" / "data" / "root" / "tests_efficiency.root"
+_BOOST_DATA = _PROJECT_ROOT / "tests" / "data" / "boost" / "test_input_boost.pkl"
 _OUT = Path(__file__).parent / "assets" / "examples"
 
 
@@ -24,6 +25,7 @@ def on_pre_build(config, **kwargs) -> None:  # noqa: ANN001
         ("profile examples", _gen_profile),
         ("efficiency examples", _gen_efficiency),
         ("style preset examples", _gen_style_presets),
+        ("boost-histogram examples", _gen_boost),
     ]:
         try:
             fn()
@@ -258,6 +260,47 @@ def _gen_style_presets() -> None:
     ratio_fig.tight_layout()
     ratio_fig.savefig(_OUT / "mpl_ratio_styled.png", dpi=120, bbox_inches="tight")
     plt.close(ratio_fig)
+
+
+def _gen_boost() -> None:
+    import pickle
+
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from unrooted.io.boost import load, load_efficiency
+    from unrooted.plot.mpl import plot
+    from unrooted.plot.style import HistogramStyle
+    from unrooted.plot.style_set import StyleSet
+
+    ss = StyleSet.load("odd")
+
+    with open(_BOOST_DATA, "rb") as f:
+        boost_data = pickle.load(f)
+
+    # Profile
+    prof = load(boost_data["nMeasurements_vs_eta"], name="nMeasurements_vs_eta")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    plot(prof, ax=ax, style=HistogramStyle.as_profile().with_color(ss.colors[0]))
+    ax.set_xlabel(prof.axes[0].label)
+    ax.set_title("boost-histogram profile: nMeasurements mean ± σ_y")
+    fig.tight_layout()
+    fig.savefig(_OUT / "mpl_boost_profile.png", dpi=120, bbox_inches="tight")
+    plt.close(fig)
+
+    # Efficiency
+    eff_data = boost_data["trackeff_vs_eta"]
+    eff = load_efficiency(eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    plot(eff, ax=ax, style=HistogramStyle.as_efficiency().with_color(ss.colors[1]))
+    ax.set_ylim(0, 1.1)
+    ax.axhline(1.0, color="gray", linestyle=":", linewidth=0.8)
+    ax.set_xlabel(eff.axes[0].label)
+    ax.set_title("boost-histogram efficiency: trackeff vs η")
+    fig.tight_layout()
+    fig.savefig(_OUT / "mpl_boost_efficiency.png", dpi=120, bbox_inches="tight")
+    plt.close(fig)
 
 
 def _write_html(fig, filename: str) -> None:  # noqa: ANN001

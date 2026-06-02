@@ -2,24 +2,28 @@
 
 ## Philosophy
 
-`unrooted` exists because ROOT histograms are the de-facto format for particle
-physics data, but the ROOT software stack is large to install and not Pythonic.
-`unrooted` bridges the gap: it reads ROOT files via
-[uproot](https://uproot.readthedocs.io/) (pure Python, no ROOT needed) and
-converts the data to `numpy`-backed objects that slot into the standard scientific
-Python ecosystem.
+`unrooted` exists because particle physics data lives in ROOT files and
+[`boost-histogram`](https://boost-histogram.readthedocs.io/) objects, but
+consuming either format traditionally requires a heavy C++ ROOT installation or
+tight coupling to a specific analysis framework.
+
+`unrooted` breaks that coupling: it converts both sources into a single
+numpy-backed `Histogram` object that slots directly into the scientific Python
+ecosystem, then lets you plot it with whichever backend fits your workflow.
 
 ```
-ROOT file (.root)
-      │
-      ▼  unrooted.io.root  (uproot under the hood)
-┌─────────────────────────┐
-│  Histogram  /  Axis     │  ←  unrooted.core
-└─────────────────────────┘
-      │
-      ├──▶  unrooted.plot.mpl       → matplotlib Axes  (publication figures)
-      ├──▶  unrooted.plot.plotly    → plotly Figure     (interactive)
-      └──▶  unrooted.plot.terminal  → str               (headless / CI)
+ROOT file (.root)        boost_histogram objects
+       │                         │
+       ▼  unrooted.io.root       ▼  unrooted.io.boost
+┌──────────────────────────────────────────────────────┐
+│                 Histogram  /  Axis                   │  ←  unrooted.core
+└──────────────────────────────────────────────────────┘
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+  unrooted.plot.mpl  unrooted.plot.plotly  unrooted.plot.terminal
+  matplotlib Axes    plotly Figure         str
+  (publication)      (interactive)         (headless / CI)
 ```
 
 ---
@@ -28,23 +32,27 @@ ROOT file (.root)
 
 **No ROOT dependency.**
 File I/O is delegated entirely to [uproot](https://uproot.readthedocs.io/).
-`uproot` is a pure-Python ROOT reader that requires no C++ ROOT installation.
+`uproot` is a pure-Python ROOT reader; no C++ ROOT installation is required.
 
 **numpy-first.**
 Every histogram is backed by `np.ndarray`.  The `Histogram` object is a thin
 dataclass wrapper — no magic, no hidden state.  You can always reach into
 `.values` and `.variances` directly.
 
+**One representation layer.**
+Both I/O backends produce the same `Histogram` type.  A histogram loaded from a
+ROOT `TProfile` and one converted from a `boost_histogram.Histogram` with `Mean`
+storage are structurally identical and can be passed to the same plot functions.
+
 **Separate concerns.**
-I/O, the data model, and plotting are independent layers.  Swapping or adding a
-plotting backend only requires a new `plot/<backend>/` sub-package implementing
-`plot()` and `overlay()`.
+I/O, the data model, and plotting are independent layers.  Adding a new I/O
+backend or a new plot backend only requires implementing the small interface of
+that layer, with no changes elsewhere.
 
 **Composable styling.**
 `HistogramStyle` covers a single histogram; `StyleSet` coordinates a four-color
 palette for a full overlay.  Styles are plain dataclasses — easy to construct,
-copy, or override.  The terminal backend intentionally omits styling (the
-character grid has no room for it) while sharing the same `Histogram` objects.
+copy, or override.
 
 ---
 
@@ -59,9 +67,12 @@ unrooted/
 │   └── histogram.py       Histogram dataclass (values, variances, spread)
 │
 ├── io/
-│   └── root/
-│       ├── reader.py      load()        → TH1 / TH2 / TProfile
-│       └── tree.py        load_branch() → TTree branch(es) as histogram
+│   ├── root/
+│   │   ├── reader.py      load()          → TH1 / TH2 / TProfile
+│   │   └── tree.py        load_branch()   → TTree branch(es) as histogram
+│   └── boost/
+│       └── reader.py      load()          → any bh.Histogram storage type
+│                          load_efficiency()→ accepted/total → efficiency
 │
 └── plot/
     ├── style.py           HistogramStyle — per-histogram visual config
@@ -87,37 +98,46 @@ unrooted/
 ## Data flow
 
 The `Histogram` dataclass is the single currency that flows through the library.
+Both I/O backends produce the same type; all plot backends consume it.
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│  I/O layer                                                       │
-│                                                                  │
-│  load("file.root", "hx")              → Histogram (TH1/TH2)     │
-│  load_branch("file.root", "t", "x")   → Histogram (count)       │
-│  load_branch("file.root", "t", "x", "y") → Histogram (profile)  │
-└───────────────────────┬──────────────────────────────────────────┘
-                        │  Histogram(axes, values, variances, …)
-┌───────────────────────▼──────────────────────────────────────────┐
-│  Core data model                                                 │
-│                                                                  │
-│  Histogram                                                       │
-│    .axes       list[Axis]   — bin edges, label, centers, widths  │
-│    .values     ndarray      — bin counts or profile means        │
-│    .variances  ndarray      — Poisson counts or SE²              │
-│    .spread_min ndarray|None — per-bin min  (profile only)        │
-│    .spread_max ndarray|None — per-bin max  (profile only)        │
-└───────────┬───────────────────────────┬─────────────────────┬────┘
-            │                           │                     │
-            ▼                           ▼                     ▼
-┌───────────────────┐   ┌───────────────────────┐  ┌─────────────────┐
-│  plot.mpl         │   │  plot.plotly           │  │  plot.terminal  │
-│                   │   │                        │  │                 │
-│  plot()           │   │  plot()                │  │  plot()         │
-│  overlay()        │   │  overlay()             │  │  overlay()      │
-│                   │   │                        │  │                 │
-│  → Axes           │   │  → go.Figure           │  │  → str          │
-│  (publication)    │   │  (interactive)         │  │  (headless)     │
-└───────────────────┘   └───────────────────────┘  └─────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│  I/O layer — ROOT backend                                                │
+│                                                                          │
+│  load("file.root", "hx")                 → Histogram (TH1/TH2)          │
+│  load("file.root", "profX")              → Histogram (TProfile)          │
+│  load_efficiency("file.root", "p", "t")  → Histogram (efficiency)        │
+│  load_branch("file.root", "t", "x")      → Histogram (count)             │
+│  load_branch("file.root", "t", "x", "y") → Histogram (profile)           │
+├──────────────────────────────────────────────────────────────────────────┤
+│  I/O layer — boost-histogram backend                                     │
+│                                                                          │
+│  load(bh_hist)                           → Histogram (any storage type)  │
+│  load_efficiency(accepted, total)         → Histogram (efficiency)        │
+└──────────────────────────┬───────────────────────────────────────────────┘
+                           │  Histogram(axes, values, variances, …)
+┌──────────────────────────▼───────────────────────────────────────────────┐
+│  Core data model                                                         │
+│                                                                          │
+│  Histogram                                                               │
+│    .axes       list[Axis]   — bin edges, label, centers, widths          │
+│    .values     ndarray      — bin counts or profile means                │
+│    .variances  ndarray      — Poisson counts or SE²                      │
+│    .overflow   ndarray|None — values with under/overflow bins            │
+│    .spread_min ndarray|None — per-bin min (profile / efficiency only)    │
+│    .spread_max ndarray|None — per-bin max (profile / efficiency only)    │
+└──────────┬──────────────────────────────┬────────────────────────┬───────┘
+           │                              │                        │
+           ▼                              ▼                        ▼
+┌──────────────────────┐   ┌─────────────────────────┐  ┌──────────────────┐
+│  plot.mpl            │   │  plot.plotly             │  │  plot.terminal   │
+│                      │   │                          │  │                  │
+│  plot()              │   │  plot()                  │  │  plot()          │
+│  overlay()           │   │  overlay()               │  │  overlay()       │
+│                      │   │                          │  │                  │
+│  → Axes              │   │  → go.Figure             │  │  → str           │
+│  (publication)       │   │  (interactive)           │  │  (headless)      │
+└──────────────────────┘   └─────────────────────────┘  └──────────────────┘
 ```
 
 ---
@@ -130,10 +150,10 @@ under `resources/` containing logos and a color palette:
 ```
 resources/
 ├── odd/
-│   ├── odd_tech_light.png     full logo
+│   ├── odd_tech_light.png      full logo
 │   ├── odd_tech_light_line.png
-│   ├── colors.json            4-color palette
-│   └── stylesheet.png         auto-generated palette preview
+│   ├── colors.json             4-color palette
+│   └── stylesheet.png          auto-generated palette preview
 └── sd/
     ├── super_duper.png
     ├── super_duper_line.png

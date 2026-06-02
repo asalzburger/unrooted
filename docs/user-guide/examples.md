@@ -6,9 +6,12 @@
     ensuring the examples always reflect the current state of the library.
     Terminal output is rendered from the same ROOT data at build time.
 
-The examples below use histograms loaded from a ROOT file via
-[`unrooted.io.root.load`][unrooted.io.root.reader.load] and the **ODD** colour
-palette from [`StyleSet`][unrooted.plot.style_set.StyleSet].
+The examples below use the **ODD** colour palette from
+[`StyleSet`][unrooted.plot.style_set.StyleSet].  ROOT examples use
+[`unrooted.io.root`][unrooted.io.root.reader.load]; boost-histogram examples
+use [`unrooted.io.boost`][unrooted.io.boost.reader.load].  Both produce the
+same [`Histogram`][unrooted.core.histogram.Histogram] type and are passed to
+the same plot functions.
 
 ---
 
@@ -119,6 +122,30 @@ All five presets applied to the same histogram with the ODD primary color.
 | `as_markers()` | – | ○ | – | bar | – |
 | `as_efficiency()` | – | ○ | – | bar | band |
 | `as_profile()` | solid | – | – | bar | band |
+
+---
+
+---
+
+## boost-histogram: profile
+
+Converted from a `boost_histogram.Histogram` with `Mean` storage via
+[`unrooted.io.boost.load`][unrooted.io.boost.reader.load].  `values` are
+per-bin means; the shaded band shows mean ± σ_y (standard deviation of
+individual measurements); error bars show ±SE (standard error of the mean).
+
+![boost-histogram profile](../assets/examples/mpl_boost_profile.png)
+
+---
+
+## boost-histogram: efficiency
+
+Converted via
+[`unrooted.io.boost.load_efficiency`][unrooted.io.boost.reader.load_efficiency]
+from a pair of `Double`-storage histograms (accepted, total).  The shaded band
+and error bars show the Gaussian ±σ confidence interval, clamped to [0, 1].
+
+![boost-histogram efficiency](../assets/examples/mpl_boost_efficiency.png)
 
 ---
 

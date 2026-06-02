@@ -10,6 +10,7 @@ dependencies = [
     "numpy",
     "uproot",
     "matplotlib",
+    "boost-histogram>=1.7.2",
 ]
 
 [project.scripts]

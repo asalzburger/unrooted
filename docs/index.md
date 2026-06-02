@@ -15,18 +15,37 @@ no ROOT installation required.
 
 ## Quick example
 
-```python
-from unrooted.io.root import load
-from unrooted.plot.mpl import plot, StyleSet
+=== "From a ROOT file"
 
-# Load a histogram from a ROOT file
-h = load("analysis.root", "hx")
+    ```python
+    from unrooted.io.root import load
+    from unrooted.plot.mpl import plot
+    from unrooted.plot import StyleSet
 
-# Plot it with the ODD colour palette
-ss = StyleSet.load("odd")
-ax = plot(h, style=ss[0])
-ax.figure.savefig("plot.png")
-```
+    h = load("analysis.root", "hx")
+
+    ss = StyleSet.load("odd")
+    ax = plot(h, style=ss[0])
+    ax.figure.savefig("plot.png")
+    ```
+
+=== "From boost-histogram"
+
+    ```python
+    import pickle
+    from unrooted.io.boost import load
+    from unrooted.plot.mpl import plot
+    from unrooted.plot import StyleSet
+
+    with open("histograms.pkl", "rb") as f:
+        data = pickle.load(f)
+
+    h = load(data["my_histogram"], name="my_histogram")
+
+    ss = StyleSet.load("odd")
+    ax = plot(h, style=ss[0])
+    ax.figure.savefig("plot.png")
+    ```
 
 ---
 
@@ -35,7 +54,8 @@ ax.figure.savefig("plot.png")
 | Module | Purpose |
 |--------|---------|
 | `unrooted.io.root` | Read ROOT histograms (`TH1`, `TH2`, `TProfile`) and TTree branches |
-| `unrooted.core` | `Histogram` and `Axis` — the central data structures |
+| `unrooted.io.boost` | Convert `boost_histogram` objects (`Mean`, `Double`, `Weight`, …) |
+| `unrooted.core` | `Histogram` and `Axis` — the common representation used by all backends |
 | `unrooted.plot` | `HistogramStyle`, `StyleSet` — per-histogram and per-target theming |
 | `unrooted.plot.mpl` | Matplotlib backend: `plot`, `overlay`, `generate_stylesheet` |
 | `unrooted.plot.plotly` | Plotly backend: interactive `plot` and `overlay` returning `go.Figure` |
