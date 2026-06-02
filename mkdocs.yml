@@ -62,6 +62,7 @@ nav:
   - Architecture: architecture.md
   - User Guide:
     - Loading ROOT Data: user-guide/loading-root.md
+    - Loading boost-histogram Data: user-guide/loading-boost.md
     - Histograms & Axes: user-guide/histograms.md
     - Plotting: user-guide/plotting.md
     - Styles & Themes: user-guide/styling.md
