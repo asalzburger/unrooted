@@ -84,6 +84,13 @@ def _apply_mpl_axes(ax, title: str, xlim, ylim) -> None:
         ax.set_ylim(*ylim)
 
 
+def _apply_mpl_labels(main_ax, bottom_ax, xlabel: str, ylabel: str) -> None:
+    if ylabel:
+        main_ax.set_ylabel(ylabel)
+    if xlabel:
+        bottom_ax.set_xlabel(xlabel)
+
+
 def _run_mpl(args, hists, labels, styles, ratio) -> None:
     import matplotlib.pyplot as plt
     from matplotlib.figure import Figure
@@ -99,9 +106,10 @@ def _run_mpl(args, hists, labels, styles, ratio) -> None:
         ax = mpl_plot(hists[0], style=styles[0])
         fig = ax.get_figure()
         _apply_mpl_axes(ax, args.title, xlim, ylim)
+        _apply_mpl_labels(ax, ax, args.xlabel, args.ylabel)
     else:
         show_labels = labels if any(labels) else None
-        ax_main, _ = mpl_overlay(
+        ax_main, ax_ratio = mpl_overlay(
             hists,
             labels=show_labels,
             styles=styles,
@@ -110,6 +118,9 @@ def _run_mpl(args, hists, labels, styles, ratio) -> None:
         )
         fig = ax_main.get_figure()
         _apply_mpl_axes(ax_main, args.title, xlim, ylim)
+        _apply_mpl_labels(
+            ax_main, ax_ratio or ax_main, args.xlabel, args.ylabel
+        )
 
     if isinstance(fig, Figure):
         fig.tight_layout()
@@ -297,6 +308,18 @@ ratio panel
         default="",
         metavar="TEXT",
         help="Figure title",
+    )
+    plot_grp.add_argument(
+        "--xlabel",
+        default="",
+        metavar="TEXT",
+        help="X-axis label override (placed on the ratio panel when --add ratio)",
+    )
+    plot_grp.add_argument(
+        "--ylabel",
+        default="",
+        metavar="TEXT",
+        help="Y-axis label override for the main panel",
     )
     plot_grp.add_argument(
         "--xlim",
