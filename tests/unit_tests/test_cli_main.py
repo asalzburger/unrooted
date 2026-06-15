@@ -169,3 +169,125 @@ def test_build_style_profile_preset():
     spec = parse_draw_spec("hist:h")  # type would say hist but preset overrides
     style = _build_style(spec, "#000", set(), "profile")
     assert style.spread_display == "band"
+
+
+# ---------------------------------------------------------------------------
+# --marker flag
+# ---------------------------------------------------------------------------
+
+def test_build_style_marker_override():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "markers", marker="s")
+    assert style.marker == "s"
+
+
+def test_build_style_marker_adds_to_hist():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "hist", marker="*")
+    assert style.marker == "*"
+
+
+def test_build_style_marker_star():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "markers", marker="*")
+    assert style.marker == "*"
+
+
+def test_parser_marker_single(tmp_path):
+    dummy = tmp_path / "f.root"
+    dummy.touch()
+    p = build_parser()
+    args = p.parse_args(["--input", str(dummy), "--draw", "hist:h", "--marker", "s"])
+    assert args.marker == ["s"]
+
+
+def test_parser_marker_multiple(tmp_path):
+    dummy = tmp_path / "f.root"
+    dummy.touch()
+    p = build_parser()
+    args = p.parse_args(
+        ["--input", str(dummy), "--draw", "hist:h", "--marker", "*", "+", "^"]
+    )
+    assert args.marker == ["*", "+", "^"]
+
+
+def test_parser_marker_invalid(tmp_path):
+    dummy = tmp_path / "f.root"
+    dummy.touch()
+    p = build_parser()
+    with pytest.raises(SystemExit):
+        p.parse_args(["--input", str(dummy), "--draw", "hist:h", "--marker", "z"])
+
+
+# ---------------------------------------------------------------------------
+# --linestyle flag
+# ---------------------------------------------------------------------------
+
+def test_build_style_linestyle_override():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "hist", linestyle="dashed")
+    assert style.line_style == "--"
+
+
+def test_build_style_linestyle_dotted():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "line", linestyle="dotted")
+    assert style.line_style == ":"
+
+
+def test_build_style_linestyle_dashdot():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "hist", linestyle="dashdot")
+    assert style.line_style == "-."
+
+
+def test_build_style_linestyle_solid():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "hist", linestyle="solid")
+    assert style.line_style == "-"
+
+
+def test_parser_linestyle_single(tmp_path):
+    dummy = tmp_path / "f.root"
+    dummy.touch()
+    p = build_parser()
+    args = p.parse_args(
+        ["--input", str(dummy), "--draw", "hist:h", "--linestyle", "dashed"]
+    )
+    assert args.linestyle == ["dashed"]
+
+
+def test_parser_linestyle_multiple(tmp_path):
+    dummy = tmp_path / "f.root"
+    dummy.touch()
+    p = build_parser()
+    args = p.parse_args(
+        ["--input", str(dummy), "--draw", "hist:h",
+         "--linestyle", "solid", "dashed", "dotted"]
+    )
+    assert args.linestyle == ["solid", "dashed", "dotted"]
+
+
+def test_parser_linestyle_invalid(tmp_path):
+    dummy = tmp_path / "f.root"
+    dummy.touch()
+    p = build_parser()
+    with pytest.raises(SystemExit):
+        p.parse_args(["--input", str(dummy), "--draw", "hist:h", "--linestyle", "bold"])
+
+
+# ---------------------------------------------------------------------------
+# Per-histogram cycling (tested via _build_style directly)
+# ---------------------------------------------------------------------------
+
+def test_build_style_no_marker_when_none():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "markers", marker=None)
+    assert style.marker == "o"   # preset default unchanged
+
+
+def test_build_style_marker_and_linestyle_combined():
+    spec = parse_draw_spec("hist:h")
+    style = _build_style(spec, "#000", set(), "hist", marker="D", linestyle="dashed")
+    assert style.marker == "D"
+    assert style.line_style == "--"

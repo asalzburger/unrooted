@@ -21,6 +21,7 @@ _MARKER_SYMBOL: dict[str, str] = {
     "D": "diamond",
     "+": "cross",
     "x": "x",
+    "*": "star",
 }
 
 # Plotly default qualitative color sequence.
