@@ -12,6 +12,13 @@ from unrooted.plot.style_set import StyleSet
 from ._draw_spec import AutoStyleHint, DrawSpec, parse_draw_spec
 from ._load import resolve_loads
 
+_LINESTYLE_MAP: dict[str, str] = {
+    "solid":   "-",
+    "dashed":  "--",
+    "dotted":  ":",
+    "dashdot": "-.",
+}
+
 _STYLE_PRESETS: dict[str, Callable[..., HistogramStyle]] = {
     "hist": HistogramStyle.as_hist,
     "line": HistogramStyle.as_line,
@@ -53,6 +60,8 @@ def _build_style(
     color: str,
     add_tokens: set[str],
     style_preset: str | None,
+    marker: str | None = None,
+    linestyle: str | None = None,
 ) -> HistogramStyle:
     base_fn = (
         _STYLE_PRESETS[style_preset]
@@ -69,6 +78,11 @@ def _build_style(
         elif token.startswith("spread_"):
             mode = token[len("spread_"):]
             updates["spread_display"] = None if mode == "none" else mode
+
+    if marker is not None:
+        updates["marker"] = marker
+    if linestyle is not None:
+        updates["line_style"] = _LINESTYLE_MAP[linestyle]
 
     if updates:
         style = dataclasses.replace(style, **updates)
@@ -223,6 +237,21 @@ ratio panel
 
   Example:
     --add ratio --ratio-range 0.5 1.5
+
+marker / line-style overrides
+------------------------------
+  --marker SHAPE [SHAPE ...]     one value → all histograms; multiple → per-histogram
+                                 (wraps cyclically)
+                                 shapes: o s ^ D + x *
+  --linestyle STYLE [STYLE ...]  one value → all; multiple → per-histogram
+                                 styles: solid dashed dotted dashdot
+
+  Examples:
+    --style markers --marker s              all histograms: square markers
+    --marker "*" + ^                        1st=star 2nd=cross 3rd=triangle
+    --linestyle dashed                      all histograms: dashed line
+    --linestyle solid dashed dotted         per-histogram line styles
+    --style efficiency --marker "^" D       1st=triangle 2nd=diamond
 """,
     )
 
@@ -297,6 +326,29 @@ ratio panel
         metavar="PRESET",
         help="Style preset override: hist, line, markers, efficiency, profile "
              "(default: auto from draw type)",
+    )
+    plot_grp.add_argument(
+        "--marker",
+        nargs="+",
+        choices=["o", "s", "^", "D", "+", "x", "*"],
+        default=None,
+        metavar="SHAPE",
+        help=(
+            "Marker shape(s).  One value → all histograms; multiple → assigned in"
+            " order (wraps cyclically).  o=circle  s=square  ^=triangle  D=diamond"
+            "  +=cross  x=x  *=star"
+        ),
+    )
+    plot_grp.add_argument(
+        "--linestyle",
+        nargs="+",
+        choices=["solid", "dashed", "dotted", "dashdot"],
+        default=None,
+        metavar="STYLE",
+        help=(
+            "Line style(s).  One value → all histograms; multiple → assigned in order "
+            "(wraps cyclically).  solid  dashed  dotted  dashdot"
+        ),
     )
     plot_grp.add_argument(
         "--show",
@@ -422,8 +474,17 @@ def main(argv: list[str] | None = None) -> None:
     # Build per-histogram styles
     ss = StyleSet.load(args.palette)
     active_specs = specs if len(specs) == len(hists) else [specs[0]] * len(hists)
+    raw_markers = args.marker or []
+    raw_linestyles = args.linestyle or []
     styles = [
-        _build_style(spec, ss.colors[i % len(ss.colors)], add_tokens, args.style)
+        _build_style(
+            spec,
+            ss.colors[i % len(ss.colors)],
+            add_tokens,
+            args.style,
+            raw_markers[i % len(raw_markers)] if raw_markers else None,
+            raw_linestyles[i % len(raw_linestyles)] if raw_linestyles else None,
+        )
         for i, spec in enumerate(active_specs)
     ]
 
