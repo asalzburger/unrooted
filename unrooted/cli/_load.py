@@ -3,10 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from unrooted.core.histogram import Histogram
+from unrooted.core.scatter import ScatterData
 from unrooted.io.root.reader import load, load_efficiency
-from unrooted.io.root.tree import load_branch
+from unrooted.io.root.tree import load_branch, load_scatter
 
 from ._draw_spec import DrawSpec
+
+LoadedItem = Histogram | ScatterData
 
 
 def _full_key(source: str, key: str) -> str:
@@ -19,7 +22,7 @@ def _load_one(
     source: str,
     n_bins: int,
     branch_range: tuple[float, float] | None,
-) -> Histogram:
+) -> LoadedItem:
     path = Path(file)
     if spec.draw_type == "eff":
         return load_efficiency(
@@ -30,14 +33,18 @@ def _load_one(
     if spec.draw_type == "branch":
         tree_key = spec.keys[0]
         x_branch = spec.keys[1]
-        y_branch = spec.keys[2] if len(spec.keys) > 2 else None
+        sub = spec.branch_sub_type
+        if sub == "scatter":
+            return load_scatter(path, tree_key, x_branch, spec.keys[2])
+        if sub == "prof":
+            return load_branch(
+                path, tree_key, x_branch, spec.keys[2],
+                n_bins=n_bins, range=branch_range,
+            )
+        # count
         return load_branch(
-            path,
-            tree_key,
-            x_branch,
-            y_branch,
-            n_bins=n_bins,
-            range=branch_range,
+            path, tree_key, x_branch,
+            n_bins=n_bins, range=branch_range,
         )
     return load(path, _full_key(source, spec.keys[0]))
 
@@ -48,8 +55,8 @@ def resolve_loads(
     source: str,
     n_bins: int = 100,
     branch_range: tuple[float, float] | None = None,
-) -> list[tuple[Histogram, str]]:
-    """Load histograms according to file/spec combination rules.
+) -> list[tuple[LoadedItem, str]]:
+    """Load histograms or scatter data according to file/spec combination rules.
 
     Combining rules:
 
@@ -59,7 +66,9 @@ def resolve_loads(
     * **N files + N specs** — zip ``(file_i, spec_i)``; label from spec key.
 
     Returns:
-        List of ``(histogram, label_hint)`` pairs.
+        List of ``(item, label_hint)`` pairs where *item* is a
+        :class:`~unrooted.core.histogram.Histogram` or
+        :class:`~unrooted.core.scatter.ScatterData`.
 
     Raises:
         ValueError: If the file/spec counts are incompatible.

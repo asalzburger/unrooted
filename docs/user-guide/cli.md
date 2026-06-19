@@ -99,9 +99,29 @@ Profile from two branches:
 ```bash
 unrooted \
   --input data.root \
-  --draw branch:myTree:eta:pt \
+  --draw branch:myTree:prof:eta:pt \
   --add spread_band \
   --output eta_vs_pt.png
+```
+
+### Scatter plot from a TTree
+
+```bash
+unrooted \
+  --input data.root \
+  --draw branch:myTree:scatter:v_eta:t_X0 \
+  --output scatter.png
+```
+
+The plotly backend is also supported for scatter plots, enabling interactive
+zoom and hover:
+
+```bash
+unrooted \
+  --input data.root \
+  --draw branch:myTree:scatter:v_eta:t_X0 \
+  --backend plotly \
+  --output scatter.html
 ```
 
 ### Terminal backend
@@ -133,7 +153,8 @@ repeated `--draw` flags.  Both forms are equivalent:
 | `prof:key` | `load(file, key)` | `as_profile()` |
 | `eff:pass_key:total_key` | `load_efficiency(file, pass, total)` | `as_efficiency()` |
 | `branch:tree:x_branch` | `load_branch(file, tree, x)` | `as_hist()` |
-| `branch:tree:x:y_branch` | `load_branch(file, tree, x, y)` | `as_profile()` |
+| `branch:tree:prof:x:y` | `load_branch(file, tree, x, y)` | `as_profile()` |
+| `branch:tree:scatter:x:y` | `load_scatter(file, tree, x, y)` | `as_scatter()` |
 
 Type aliases: `hist` = `th1` = `h1`; `th2` = `h2`; `prof` = `profile` = `tprofile`;
 `eff` = `efficiency`; `branch` = `tree`.
@@ -209,6 +230,7 @@ Override the auto-selected style preset:
 | `markers` | `HistogramStyle.as_markers()` — markers + errors |
 | `efficiency` | `HistogramStyle.as_efficiency()` — markers + spread band |
 | `profile` | `HistogramStyle.as_profile()` — line + spread band |
+| `scatter` | `HistogramStyle.as_scatter()` — tiny point markers |
 
 ### `--palette`
 

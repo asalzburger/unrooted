@@ -9,6 +9,7 @@ import uproot
 
 from unrooted.core.axis import Axis
 from unrooted.core.histogram import Histogram
+from unrooted.core.scatter import ScatterData
 
 
 def load_branch(
@@ -75,6 +76,46 @@ def load_branch(
     x_flat = np.asarray(ak.flatten(x_bc, axis=None), dtype=float)  # type: ignore[arg-type]
     y_flat = np.asarray(ak.flatten(y_bc, axis=None), dtype=float)  # type: ignore[arg-type]
     return _profile_histogram(x_flat, y_flat, edges, y_branch, axis_label)
+
+
+def load_scatter(
+    path: str | Path,
+    key: str,
+    x_branch: str,
+    y_branch: str,
+    *,
+    label_x: str = "",
+    label_y: str = "",
+) -> ScatterData:
+    """Load two TTree branches as a raw (x, y) scatter point cloud.
+
+    Both branches are broadcast to a common shape (supporting the same scalar,
+    vector, and jagged combinations as :func:`load_branch`) and then fully
+    flattened.  No binning is performed.
+
+    Args:
+        path:     Path to the ROOT file.
+        key:      Tree name inside the file.
+        x_branch: Branch used for the x-axis.
+        y_branch: Branch used for the y-axis.
+        label_x:  X-axis label; defaults to *x_branch*.
+        label_y:  Y-axis label; defaults to *y_branch*.
+    """
+    with cast(Any, uproot.open(path)) as f:
+        x_ak = f[key][x_branch].array(library="ak")
+        y_ak = f[key][y_branch].array(library="ak")
+
+    x_bc, y_bc = ak.broadcast_arrays(x_ak, y_ak)  # type: ignore[misc]
+    x_flat = np.asarray(ak.flatten(x_bc, axis=None), dtype=float)  # type: ignore[arg-type]
+    y_flat = np.asarray(ak.flatten(y_bc, axis=None), dtype=float)  # type: ignore[arg-type]
+
+    return ScatterData(
+        x=x_flat,
+        y=y_flat,
+        name=y_branch,
+        x_label=label_x or x_branch,
+        y_label=label_y or y_branch,
+    )
 
 
 # ---------------------------------------------------------------------------
