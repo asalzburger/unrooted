@@ -6,6 +6,8 @@ import sys
 from collections.abc import Callable
 from typing import Literal
 
+from unrooted.core.histogram import Histogram
+from unrooted.core.scatter import ScatterData
 from unrooted.plot.style import HistogramStyle
 from unrooted.plot.style_set import StyleSet
 
@@ -25,12 +27,14 @@ _STYLE_PRESETS: dict[str, Callable[..., HistogramStyle]] = {
     "markers": HistogramStyle.as_markers,
     "efficiency": HistogramStyle.as_efficiency,
     "profile": HistogramStyle.as_profile,
+    "scatter": HistogramStyle.as_scatter,
 }
 
 _AUTO_STYLE_MAP: dict[AutoStyleHint, Callable[..., HistogramStyle]] = {
     "hist": HistogramStyle.as_hist,
     "profile": HistogramStyle.as_profile,
     "efficiency": HistogramStyle.as_efficiency,
+    "scatter": HistogramStyle.as_scatter,
 }
 
 _VALID_ADD_TOKENS = {
@@ -105,7 +109,42 @@ def _apply_mpl_labels(main_ax, bottom_ax, xlabel: str, ylabel: str) -> None:
         bottom_ax.set_xlabel(xlabel)
 
 
-def _run_mpl(args, hists, labels, styles, ratio) -> None:
+def _run_mpl_scatter(args, scatters, labels, styles) -> None:
+    import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure
+
+    from unrooted.plot.mpl.scatter import plot as scatter_plot
+
+    xlim = tuple(args.xlim) if args.xlim else None
+    ylim = tuple(args.ylim) if args.ylim else None
+
+    _, ax = plt.subplots()
+    for sd, label, style in zip(scatters, labels, styles):
+        scatter_plot(sd, ax=ax, style=style, label=label, set_axis_labels=False)
+
+    # Axis labels: use first scatter's labels unless overridden
+    x_label = args.xlabel or (scatters[0].x_label if scatters else "")
+    y_label = args.ylabel or (scatters[0].y_label if scatters else "")
+    if x_label:
+        ax.set_xlabel(x_label)
+    if y_label:
+        ax.set_ylabel(y_label)
+
+    if any(labels):
+        ax.legend()
+
+    _apply_mpl_axes(ax, args.title, xlim, ylim)
+
+    fig = ax.get_figure()
+    if isinstance(fig, Figure):
+        fig.tight_layout()
+        if args.output:
+            fig.savefig(args.output)
+    if args.show or not args.output:
+        plt.show()
+
+
+def _run_mpl(args, items, labels, styles, ratio) -> None:
     import matplotlib.pyplot as plt
     from matplotlib.figure import Figure
 
@@ -115,6 +154,8 @@ def _run_mpl(args, hists, labels, styles, ratio) -> None:
     xlim = tuple(args.xlim) if args.xlim else None
     ylim = tuple(args.ylim) if args.ylim else None
     ratio_range = tuple(args.ratio_range) if args.ratio_range else None
+
+    hists = [h for h in items if isinstance(h, Histogram)]
 
     if len(hists) == 1 and hists[0].ndim == 2:
         ax = mpl_plot(hists[0], style=styles[0])
@@ -142,6 +183,50 @@ def _run_mpl(args, hists, labels, styles, ratio) -> None:
             fig.savefig(args.output)
     if args.show or not args.output:
         plt.show()
+
+
+def _run_plotly_scatter(args, scatters, labels, styles) -> None:
+    try:
+        import plotly.graph_objects as go
+
+        from unrooted.plot.plotly.histogram import DEFAULT_COLORS
+        from unrooted.plot.plotly.scatter import _add_scatter_trace
+    except ImportError:
+        sys.exit(
+            "Plotly is not installed. Install it with: pip install 'unrooted[plotly]'"
+        )
+
+    fig = go.Figure()
+    show_labels = labels if any(labels) else [None] * len(scatters)
+    for i, (sd, label, style) in enumerate(zip(scatters, show_labels, styles)):
+        color = (
+            style.marker_color
+            if style.marker_color is not None
+            else DEFAULT_COLORS[i % len(DEFAULT_COLORS)]
+        )
+        _add_scatter_trace(fig, sd, style, color, label=label)
+
+    x_label = args.xlabel or (scatters[0].x_label if scatters else "")
+    y_label = args.ylabel or (scatters[0].y_label if scatters else "")
+    if x_label:
+        fig.update_xaxes(title_text=x_label)
+    if y_label:
+        fig.update_yaxes(title_text=y_label)
+
+    if args.title:
+        fig.update_layout(title_text=args.title)
+    if args.xlim:
+        fig.update_xaxes(range=list(args.xlim))
+    if args.ylim:
+        fig.update_yaxes(range=list(args.ylim))
+
+    if args.output:
+        if args.output.endswith(".html"):
+            fig.write_html(args.output)
+        else:
+            fig.write_image(args.output)
+    if args.show or not args.output:
+        fig.show()
 
 
 def _run_plotly(args, hists, labels, styles, ratio) -> None:
@@ -206,18 +291,20 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="""
 draw spec format
 ----------------
-  TYPE:KEY[/path]          hist, th2, prof  (colons inside key act as path sep)
-  eff:pass_key:total_key   efficiency from two TH1s
-  branch:tree:x_branch     TTree count histogram
-  branch:tree:x:y_branch   TTree profile histogram
+  TYPE:KEY[/path]              hist, th2, prof  (colons inside key act as path sep)
+  eff:pass_key:total_key       efficiency from two TH1s
+  branch:tree:x_branch         TTree count histogram
+  branch:tree:prof:x:y         TTree profile histogram
+  branch:tree:scatter:x:y      TTree scatter plot
 
   type aliases: hist=th1=h1, th2=h2, prof=profile=tprofile, eff=efficiency, branch=tree
 
   Examples:
     --draw hist:hx
-    --draw prof:somedata/eta          (same as prof:somedata:eta)
+    --draw prof:somedata/eta              (same as prof:somedata:eta)
     --draw eff:h_passed:h_total
-    --draw branch:myTree:eta:pt
+    --draw branch:myTree:prof:eta:pt
+    --draw branch:myTree:scatter:v_eta:t_X0
 
 --add tokens (space- or colon-separated)
 -----------------------------------------
@@ -324,7 +411,7 @@ marker / line-style overrides
         choices=list(_STYLE_PRESETS),
         default=None,
         metavar="PRESET",
-        help="Style preset override: hist, line, markers, efficiency, profile "
+        help="Style preset override: hist, line, markers, efficiency, profile, scatter "
              "(default: auto from draw type)",
     )
     plot_grp.add_argument(
@@ -458,22 +545,30 @@ def main(argv: list[str] | None = None) -> None:
     except (ValueError, KeyError) as e:
         sys.exit(f"unrooted: error loading histograms: {e}")
 
-    hists = [h for h, _ in loaded]
+    items = [item for item, _ in loaded]
     label_hints = [hint for _, hint in loaded]
+
+    # Validate that all items are the same kind (scatter or histogram).
+    n_scatter = sum(isinstance(it, ScatterData) for it in items)
+    if n_scatter not in (0, len(items)):
+        sys.exit(
+            "unrooted: cannot mix scatter and histogram draw specs in one command"
+        )
+    all_scatter = n_scatter == len(items)
 
     # Resolve labels
     if args.label:
-        if len(args.label) != len(hists):
+        if len(args.label) != len(items):
             parser.error(
-                f"--label: expected {len(hists)} value(s), got {len(args.label)}"
+                f"--label: expected {len(items)} value(s), got {len(args.label)}"
             )
         labels = args.label
     else:
-        labels = [h.name or hint for h, hint in zip(hists, label_hints)]
+        labels = [it.name or hint for it, hint in zip(items, label_hints)]
 
-    # Build per-histogram styles
+    # Build per-item styles
     ss = StyleSet.load(args.palette)
-    active_specs = specs if len(specs) == len(hists) else [specs[0]] * len(hists)
+    active_specs = specs if len(specs) == len(items) else [specs[0]] * len(items)
     raw_markers = args.marker or []
     raw_linestyles = args.linestyle or []
     styles = [
@@ -491,10 +586,22 @@ def main(argv: list[str] | None = None) -> None:
     # Dispatch to backend
     try:
         if args.backend == "mpl":
-            _run_mpl(args, hists, labels, styles, ratio)
+            if all_scatter:
+                _run_mpl_scatter(args, items, labels, styles)
+            else:
+                _run_mpl(args, items, labels, styles, ratio)
         elif args.backend == "plotly":
-            _run_plotly(args, hists, labels, styles, ratio)
+            if all_scatter:
+                _run_plotly_scatter(args, items, labels, styles)
+            else:
+                hists = [h for h in items if isinstance(h, Histogram)]
+                _run_plotly(args, hists, labels, styles, ratio)
         else:
+            if all_scatter:
+                sys.exit(
+                    "unrooted: scatter not yet supported by the terminal backend"
+                )
+            hists = [h for h in items if isinstance(h, Histogram)]
             _run_terminal(args, hists, labels, ratio)
     except Exception as e:  # noqa: BLE001
         sys.exit(f"unrooted: {e}")

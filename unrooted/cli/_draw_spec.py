@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from typing import Literal
 
 DrawType = Literal["hist", "prof", "th2", "eff", "branch"]
-AutoStyleHint = Literal["hist", "profile", "efficiency"]
+AutoStyleHint = Literal["hist", "profile", "efficiency", "scatter"]
+BranchSubType = Literal["count", "prof", "scatter"]
 
 _TYPE_ALIASES: dict[str, DrawType] = {
     "hist": "hist",
@@ -26,8 +27,10 @@ _AUTO_STYLE: dict[DrawType, AutoStyleHint] = {
     "th2": "hist",
     "prof": "profile",
     "eff": "efficiency",
-    "branch": "hist",
+    "branch": "hist",  # overridden per branch_sub_type during parsing
 }
+
+_BRANCH_SUBTYPES = {"prof", "scatter"}
 
 
 @dataclass
@@ -35,6 +38,7 @@ class DrawSpec:
     draw_type: DrawType
     keys: list[str]
     auto_style: AutoStyleHint
+    branch_sub_type: BranchSubType | None = None
 
 
 def parse_draw_spec(spec: str) -> DrawSpec:
@@ -42,17 +46,18 @@ def parse_draw_spec(spec: str) -> DrawSpec:
 
     Format: ``TYPE:KEY`` or multi-part depending on type:
 
-    * ``hist:key/path``         — TH1 histogram (also ``th1:``, ``h1:``)
-    * ``th2:key/path``          — TH2 histogram (also ``h2:``)
-    * ``prof:key/path``         — TProfile histogram (also ``profile:``)
-    * ``eff:pass_key:total_key``— efficiency from two TH1s
-    * ``branch:tree:x_branch``  — TTree count histogram
-    * ``branch:tree:x:y``       — TTree profile histogram
+    * ``hist:key/path``                — TH1 histogram (also ``th1:``, ``h1:``)
+    * ``th2:key/path``                 — TH2 histogram (also ``h2:``)
+    * ``prof:key/path``                — TProfile histogram (also ``profile:``)
+    * ``eff:pass_key:total_key``       — efficiency from two TH1s
+    * ``branch:tree:x_branch``         — TTree count histogram
+    * ``branch:tree:prof:x:y``         — TTree profile histogram
+    * ``branch:tree:scatter:x:y``      — TTree scatter plot
 
-    For ``hist``, ``prof``, and ``th2`` types any colons inside the key path are
-    treated as path separators and joined with ``/``, so both
-    ``prof:somedata/eta`` and ``prof:somedata:eta`` resolve to the same
-    ROOT path ``somedata/eta``.
+    For ``hist``, ``prof``, and ``th2`` types any colons inside the key path
+    are treated as path separators and joined with ``/``, so both
+    ``prof:somedata/eta`` and ``prof:somedata:eta`` resolve to the same ROOT
+    path ``somedata/eta``.
 
     Args:
         spec: Raw draw specification string from the command line.
@@ -84,15 +89,80 @@ def parse_draw_spec(spec: str) -> DrawSpec:
                 f"Efficiency spec requires exactly 2 keys: 'eff:pass_key:total_key'. "
                 f"Got: {spec!r}"
             )
-        keys = rest
-    elif draw_type == "branch":
-        if not 2 <= len(rest) <= 3:
-            raise ValueError(
-                f"Branch spec requires 2 or 3 keys: 'branch:tree:x[:y]'. Got: {spec!r}"
-            )
-        keys = rest
-    else:
-        # hist, prof, th2: colons inside path are path separators → join with /
-        keys = ["/".join(rest)]
+        return DrawSpec(
+            draw_type=draw_type,
+            keys=rest,
+            auto_style=_AUTO_STYLE[draw_type],
+        )
 
-    return DrawSpec(draw_type=draw_type, keys=keys, auto_style=_AUTO_STYLE[draw_type])
+    if draw_type == "branch":
+        return _parse_branch_spec(spec, rest)
+
+    # hist, prof, th2: colons inside path are path separators → join with /
+    return DrawSpec(
+        draw_type=draw_type,
+        keys=["/".join(rest)],
+        auto_style=_AUTO_STYLE[draw_type],
+    )
+
+
+def _parse_branch_spec(spec: str, rest: list[str]) -> DrawSpec:
+    """Parse the `rest` parts of a ``branch:`` draw spec.
+
+    Accepted formats (rest = everything after the leading ``branch`` token):
+
+    * ``[tree, x]``                     → count histogram
+    * ``[tree, "prof", x, y]``          → profile histogram
+    * ``[tree, "scatter", x, y]``       → scatter plot
+
+    The old implicit profile format ``[tree, x, y]`` (three parts) is no
+    longer accepted.  Use ``branch:tree:prof:x:y`` instead.
+    """
+    if len(rest) < 2:
+        raise ValueError(
+            f"Branch spec requires at least tree and x-branch: "
+            f"'branch:tree:x_branch'. Got: {spec!r}"
+        )
+
+    tree_key = rest[0]
+
+    # Detect subtype from the second token.
+    if rest[1] in _BRANCH_SUBTYPES:
+        sub_type_str = rest[1]
+        branch_args = rest[2:]
+        if len(branch_args) != 2:
+            raise ValueError(
+                f"Branch spec 'branch:tree:{sub_type_str}:x:y' requires exactly "
+                f"2 branch names after the subtype. Got: {spec!r}"
+            )
+        x_branch, y_branch = branch_args
+        sub_type: BranchSubType = sub_type_str  # type: ignore[assignment]
+        auto_style: AutoStyleHint = "scatter" if sub_type == "scatter" else "profile"
+        return DrawSpec(
+            draw_type="branch",
+            keys=[tree_key, x_branch, y_branch],
+            auto_style=auto_style,
+            branch_sub_type=sub_type,
+        )
+
+    # Count histogram: branch:tree:x_branch
+    if len(rest) == 2:
+        return DrawSpec(
+            draw_type="branch",
+            keys=[tree_key, rest[1]],
+            auto_style="hist",
+            branch_sub_type="count",
+        )
+
+    # Old implicit profile format — guide the user to the new syntax.
+    if len(rest) == 3:
+        raise ValueError(
+            f"Implicit profile format 'branch:tree:x:y' is no longer supported. "
+            f"Use 'branch:{rest[0]}:prof:{rest[1]}:{rest[2]}' instead. "
+            f"Got: {spec!r}"
+        )
+
+    raise ValueError(
+        f"Unrecognised branch spec format. Expected 'branch:tree:x', "
+        f"'branch:tree:prof:x:y', or 'branch:tree:scatter:x:y'. Got: {spec!r}"
+    )

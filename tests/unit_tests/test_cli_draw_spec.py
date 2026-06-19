@@ -67,14 +67,31 @@ def test_eff_wrong_key_count():
 def test_branch_count():
     s = parse_draw_spec("branch:myTree:x_col")
     assert s.draw_type == "branch"
+    assert s.branch_sub_type == "count"
     assert s.keys == ["myTree", "x_col"]
     assert s.auto_style == "hist"
 
 
-def test_branch_profile():
-    s = parse_draw_spec("branch:myTree:x_col:y_col")
+def test_branch_profile_explicit():
+    s = parse_draw_spec("branch:myTree:prof:x_col:y_col")
     assert s.draw_type == "branch"
+    assert s.branch_sub_type == "prof"
     assert s.keys == ["myTree", "x_col", "y_col"]
+    assert s.auto_style == "profile"
+
+
+def test_branch_scatter():
+    s = parse_draw_spec("branch:myTree:scatter:x_col:y_col")
+    assert s.draw_type == "branch"
+    assert s.branch_sub_type == "scatter"
+    assert s.keys == ["myTree", "x_col", "y_col"]
+    assert s.auto_style == "scatter"
+
+
+def test_branch_implicit_profile_rejected():
+    # Old format 'branch:tree:x:y' must now use explicit 'prof' subtype.
+    with pytest.raises(ValueError, match="prof"):
+        parse_draw_spec("branch:myTree:x_col:y_col")
 
 
 def test_branch_alias_tree():
@@ -82,9 +99,14 @@ def test_branch_alias_tree():
     assert s.draw_type == "branch"
 
 
-def test_branch_wrong_key_count():
+def test_branch_scatter_missing_y():
     with pytest.raises(ValueError):
-        parse_draw_spec("branch:myTree:x:y:z")
+        parse_draw_spec("branch:myTree:scatter:x_only")
+
+
+def test_branch_prof_missing_y():
+    with pytest.raises(ValueError):
+        parse_draw_spec("branch:myTree:prof:x_only")
 
 
 def test_unknown_type():

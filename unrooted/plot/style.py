@@ -134,6 +134,19 @@ class HistogramStyle:
             **overrides,
         })
 
+    @classmethod
+    def as_scatter(cls, **overrides) -> HistogramStyle:
+        """Tiny point markers — suited for 2D scatter plots from TTree branches."""
+        return cls(**{
+            "line_style": None,
+            "marker": ".",
+            "marker_size": 2.0,
+            "fill_alpha": None,
+            "error_display": None,
+            "spread_display": None,
+            **overrides,
+        })
+
     # ------------------------------------------------------------------
     # Copy helpers
     # ------------------------------------------------------------------

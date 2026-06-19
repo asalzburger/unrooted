@@ -50,9 +50,13 @@ Every reader returns a `Histogram`. Currently only the ROOT backend exists:
 - `style_set.StyleSet` — loads `resources/{target}/colors.json` and combines four palette colors with four `_STYLE_TEMPLATES` (line style + marker combinations) into a ready-to-use `styles` list; index wraps cyclically
 - `mpl/histogram.plot()` — dispatches to `_plot_1d`, `_plot_1d_styled`, or `_plot_2d`; `_plot_1d_styled` renders in five ordered layers: fill → line → markers → errors → spread
 - `mpl/overlay.overlay()` — multi-histogram overlay with optional ratio panel
+- `mpl/scatter.plot()` — renders a `ScatterData` point cloud; `_add_scatter_trace` is the composable primitive used by the CLI for multi-dataset overlays
 - `mpl/_range._draw_range()` — shared primitive for both error bars and filled bands, used by both the histogram and overlay modules
 - `mpl/stylesheet.generate_stylesheet()` — renders a palette preview PNG; called as part of resource updates
-- `plotly/` and `terminal/` — alternative backends with the same `plot()` entry point
+- `plotly/histogram.plot()` — plotly equivalent; `_MARKER_SYMBOL` and `DEFAULT_COLORS` are shared with `plotly/scatter.py`
+- `plotly/scatter.plot()` — plotly scatter equivalent; `_add_scatter_trace` is the composable primitive used by the CLI
+- `plotly/overlay.overlay()` — multi-histogram overlay returning a single `go.Figure`
+- `terminal/` — alternative backend with the same `plot()` / `overlay()` entry points (histograms only; scatter not supported)
 
 ### Resources (`resources/<target>/`)
 Each target (e.g. `odd`, `sd`) contains `colors.json` (4-color palette) and logo assets. `StyleSet.load(target)` is the only consumer of `colors.json`.

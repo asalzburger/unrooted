@@ -114,6 +114,39 @@ fig, ax = plt.subplots()
 overlay([h1, h2], ax=ax, labels=["h1", "h2"])
 ```
 
+### Scatter plots
+
+```python
+from unrooted.plot.mpl.scatter import plot as scatter_plot
+from unrooted.core.scatter import ScatterData
+
+sd = ScatterData(x=x_arr, y=y_arr, x_label="η", y_label="pT [GeV]")
+ax = scatter_plot(sd)
+```
+
+Pass a `HistogramStyle` built with `HistogramStyle.as_scatter()` to control
+marker shape, size, color, and opacity:
+
+```python
+from unrooted.plot.style import HistogramStyle
+
+style = HistogramStyle.as_scatter(marker="o", marker_size=3.0)
+ax = scatter_plot(sd, style=style, label="track candidates")
+ax.legend()
+```
+
+To overlay multiple scatter datasets on the same axes, pass an existing `ax`:
+
+```python
+import matplotlib.pyplot as plt
+
+_, ax = plt.subplots()
+scatter_plot(sd1, ax=ax, label="A", set_axis_labels=False)
+scatter_plot(sd2, ax=ax, label="B", set_axis_labels=False)
+ax.set_xlabel("η")
+ax.legend()
+```
+
 ### 2D histograms
 
 `plot()` detects `h.ndim == 2` automatically and renders via `pcolormesh`:
@@ -192,6 +225,42 @@ With a ratio panel:
 
 ```python
 fig = overlay([h1, h2], labels=["ref", "alt"], ratio=True)
+fig.show()
+```
+
+### Scatter plots
+
+```python
+from unrooted.plot.plotly.scatter import plot as scatter_plot
+from unrooted.core.scatter import ScatterData
+
+sd = ScatterData(x=x_arr, y=y_arr, x_label="η", y_label="pT [GeV]")
+fig = scatter_plot(sd)
+fig.show()
+```
+
+With a custom style and label:
+
+```python
+from unrooted.plot.style import HistogramStyle
+
+style = HistogramStyle.as_scatter(marker="o", marker_size=3.0).with_color("#1A4F8A")
+fig = scatter_plot(sd, style=style, label="track candidates")
+fig.show()
+```
+
+To overlay multiple datasets, use `_add_scatter_trace` directly:
+
+```python
+import plotly.graph_objects as go
+from unrooted.plot.plotly.scatter import _add_scatter_trace
+from unrooted.plot.plotly.histogram import DEFAULT_COLORS
+from unrooted.plot.style import HistogramStyle
+
+fig = go.Figure()
+style = HistogramStyle.as_scatter()
+_add_scatter_trace(fig, sd1, style, DEFAULT_COLORS[0], label="A")
+_add_scatter_trace(fig, sd2, style, DEFAULT_COLORS[1], label="B")
 fig.show()
 ```
 
