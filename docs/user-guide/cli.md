@@ -308,6 +308,38 @@ identify the destination and suggest HTML when the static export setup fails.
 These display rules apply to graphical backends. Terminal output always goes
 to stdout; redirect it with your shell to save a text preview.
 
+For branch draw specs, use `--entry-start N` and `--entry-stop N` to select
+tree entries before broadcasting or flattening. The start is included and
+the stop is excluded; defaults are zero and the end of the tree. Bounds are
+nonnegative, ordered, and clipped to the tree length. The selection applies
+independently to each input file. These flags are rejected when the command
+has no branch spec; stored histograms are unaffected.
+
+```bash
+unrooted --input data.root --draw branch:tree:scatter:x:y \
+  --entry-start 1000 --entry-stop 2000 --output selected.png
+```
+
+`--step-size N` sets the maximum tree entries per chunk (default `100000`);
+it requires a branch spec and is not a byte limit. For scatter datasets,
+`--max-points N` explicitly limits retained flattened pairs per dataset.
+The default policy `--sampling error` fails on overflow. Select uniform
+sampling explicitly, with a repeatable nonnegative seed:
+
+```bash
+unrooted --input data.root --draw branch:tree:scatter:x:y \
+  --max-points 100000 --sampling random --seed 71 \
+  --step-size 100000 --backend plotly --output sampled.html
+```
+
+`--sampling random` requires `--max-points`; `--seed` requires random sampling
+and defaults to `0`. Sampling flags are rejected for histogram/profile specs.
+No sampling happens without an explicit request. When points are removed,
+the CLI reports retained/source pair counts and the seed on stderr. Point
+counts are after event selection and broadcasting; returned points remain in
+input order. See [loading memory and sampling](loading-root.md#chunking-and-memory)
+for the memory model, statistical meaning, and reference measurements.
+
 With ratios, `--xlabel` applies to the bottom axis and `--ylabel` / `--ylim`
 apply to the main panel. `--ratio-range` controls only the ratio y-axis and
 requires `--add ratio`. `--xlim` applies to the shared x range.

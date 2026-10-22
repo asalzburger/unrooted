@@ -28,6 +28,12 @@ def _load_one(
     source: str,
     n_bins: int,
     branch_range: tuple[float, float] | None,
+    entry_start: int,
+    entry_stop: int | None,
+    step_size: int,
+    max_points: int | None,
+    sampling: str,
+    seed: int,
 ) -> LoadedItem:
     path = Path(file)
     if spec.draw_type == "eff":
@@ -41,7 +47,18 @@ def _load_one(
         x_branch = spec.keys[1]
         sub = spec.branch_sub_type
         if sub == "scatter":
-            return load_scatter(path, tree_key, x_branch, spec.keys[2])
+            return load_scatter(
+                path,
+                tree_key,
+                x_branch,
+                spec.keys[2],
+                entry_start=entry_start,
+                entry_stop=entry_stop,
+                step_size=step_size,
+                max_points=max_points,
+                sampling=sampling,
+                seed=seed,
+            )
         if sub == "prof":
             return load_branch(
                 path,
@@ -50,6 +67,9 @@ def _load_one(
                 spec.keys[2],
                 n_bins=n_bins,
                 range=branch_range,
+                entry_start=entry_start,
+                entry_stop=entry_stop,
+                step_size=step_size,
             )
         # count
         return load_branch(
@@ -58,6 +78,9 @@ def _load_one(
             x_branch,
             n_bins=n_bins,
             range=branch_range,
+            entry_start=entry_start,
+            entry_stop=entry_stop,
+            step_size=step_size,
         )
     hist = load(path, _full_key(source, spec.keys[0]))
     if spec.draw_type == "th2" and hist.ndim != 2:
@@ -77,6 +100,13 @@ def resolve_loads(
     source: str,
     n_bins: int = 100,
     branch_range: tuple[float, float] | None = None,
+    *,
+    entry_start: int = 0,
+    entry_stop: int | None = None,
+    step_size: int = 100_000,
+    max_points: int | None = None,
+    sampling: str = "error",
+    seed: int = 0,
 ) -> list[tuple[LoadedItem, str]]:
     """Load histograms or scatter data according to file/spec combination rules.
 
@@ -113,6 +143,21 @@ def resolve_loads(
         )
 
     return [
-        (_load_one(f, s, source, n_bins, branch_range), label_fn(f, s))
+        (
+            _load_one(
+                f,
+                s,
+                source,
+                n_bins,
+                branch_range,
+                entry_start,
+                entry_stop,
+                step_size,
+                max_points,
+                sampling,
+                seed,
+            ),
+            label_fn(f, s),
+        )
         for f, s in pairs
     ]

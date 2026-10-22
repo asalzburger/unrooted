@@ -89,6 +89,22 @@ def main() -> None:
         plt.close(ax_main.figure)
 
         points = load_scatter(root_path, "tree", "x", "y")
+        selected = load_scatter(
+            root_path, "tree", "x", "y", entry_start=1, entry_stop=2
+        )
+        np.testing.assert_array_equal(selected.x, [1.0])
+        np.testing.assert_array_equal(selected.y, [3.0])
+        sampled = load_scatter(
+            root_path,
+            "tree",
+            "x",
+            "y",
+            max_points=1,
+            sampling="random",
+            seed=71,
+            step_size=1,
+        )
+        assert sampled.sampled and sampled.source_points == 2 and len(sampled.x) == 1
         ax_scatter = plot_scatter(points, label="Points")
         ax_scatter.figure.savefig(workdir / "scatter.png")
         plt.close(ax_scatter.figure)
@@ -114,6 +130,36 @@ def main() -> None:
         assert "--input" in run_cli("--help")
         base_args = ["--input", str(root_path), "--draw", "hist:hx"]
         assert run_cli(*base_args, "--backend", "terminal").strip()
+        assert run_cli(
+            "--input",
+            str(root_path),
+            "--draw",
+            "branch:tree:x",
+            "--entry-start",
+            "1",
+            "--entry-stop",
+            "2",
+            "--backend",
+            "terminal",
+        ).strip()
+        sampled_output = workdir / "sampled.png"
+        run_cli(
+            "--input",
+            str(root_path),
+            "--draw",
+            "branch:tree:scatter:x:y",
+            "--max-points",
+            "1",
+            "--sampling",
+            "random",
+            "--seed",
+            "71",
+            "--step-size",
+            "1",
+            "--output",
+            str(sampled_output),
+        )
+        assert sampled_output.stat().st_size > 0
         assert "unrooted: error loading data:" in run_cli(
             "--input",
             str(workdir / "missing.root"),

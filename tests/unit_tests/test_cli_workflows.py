@@ -486,3 +486,127 @@ def test_saved_heatmap_honors_axis_and_title_overrides(inputs, tmp_path, backend
         assert layout["xaxis"]["title"]["text"] == "Position"
         assert layout["yaxis"]["title"]["text"] == "Momentum"
         assert layout["title"]["text"] == "Density"
+
+
+@pytest.mark.parametrize(
+    "spec", ["branch:tree:x", "branch:tree:prof:x:y", "branch:tree:scatter:x:y"]
+)
+def test_cli_entry_selection_is_forwarded_to_branch_readers(inputs, tmp_path, spec):
+    output = plotly_output(tmp_path)
+    main(
+        [
+            "--input",
+            str(inputs[0]),
+            "--draw",
+            spec,
+            "--backend",
+            "plotly",
+            "--entry-start",
+            "1",
+            "--entry-stop",
+            "2",
+            "--output",
+            str(output),
+        ]
+    )
+    data, layout = read_html_figure(output)
+    assert output.stat().st_size > 100
+    if ":scatter:" in spec:
+        # One selected event, one point, rather than both source entries.
+        x = data[0]["x"]
+        if isinstance(x, list):
+            assert len(x) == 1
+        else:
+            import base64
+
+            assert (
+                np.frombuffer(base64.b64decode(x["bdata"]), dtype=x["dtype"]).size == 1
+            )
+
+
+@pytest.mark.parametrize(
+    "flags",
+    [
+        ["--entry-start", "-1"],
+        ["--entry-start", "2", "--entry-stop", "1"],
+        ["--entry-stop", "1"],
+    ],
+)
+def test_cli_invalid_entry_options_are_argument_errors(inputs, flags):
+    with pytest.raises(SystemExit) as error:
+        main(["--input", str(inputs[0]), "--draw", "hist:h", *flags])
+    assert error.value.code == 2
+
+
+def test_cli_explicit_random_sampling_is_reported_and_saved(inputs, tmp_path, capsys):
+    output = plotly_output(tmp_path)
+    main(
+        [
+            "--input",
+            str(inputs[0]),
+            "--draw",
+            "branch:tree:scatter:x:y",
+            "--backend",
+            "plotly",
+            "--max-points",
+            "1",
+            "--sampling",
+            "random",
+            "--seed",
+            "71",
+            "--step-size",
+            "1",
+            "--output",
+            str(output),
+        ]
+    )
+    assert "sampled 1 of 2 points uniformly (seed=71)" in capsys.readouterr().err
+    assert output.stat().st_size > 100
+
+
+def test_cli_scatter_limit_does_not_silently_truncate(inputs):
+    with pytest.raises(SystemExit) as error:
+        main(
+            [
+                "--input",
+                str(inputs[0]),
+                "--draw",
+                "branch:tree:scatter:x:y",
+                "--max-points",
+                "1",
+            ]
+        )
+    assert str(error.value.code).startswith("unrooted: error loading data:")
+    assert "max_points=1" in str(error.value.code)
+
+
+@pytest.mark.parametrize(
+    "flags",
+    [
+        ["--step-size", "0"],
+        ["--step-size", "1"],
+        ["--max-points", "0"],
+        ["--max-points", "1"],
+        ["--sampling", "random"],
+        ["--seed", "0"],
+    ],
+)
+def test_cli_resource_options_require_valid_sizes_and_branch_types(inputs, flags):
+    with pytest.raises(SystemExit) as error:
+        main(["--input", str(inputs[0]), "--draw", "hist:h", *flags])
+    assert error.value.code == 2
+
+
+def test_cli_scatter_random_mode_requires_an_explicit_limit(inputs):
+    with pytest.raises(SystemExit) as error:
+        main(
+            [
+                "--input",
+                str(inputs[0]),
+                "--draw",
+                "branch:tree:scatter:x:y",
+                "--sampling",
+                "random",
+            ]
+        )
+    assert error.value.code == 2

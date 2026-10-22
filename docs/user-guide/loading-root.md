@@ -164,6 +164,26 @@ Count and profile histograms use bins `[left, right)`, with the final right
 edge included in the last bin. A value exactly on an internal edge belongs to
 the bin on its right. Values outside the specified range are omitted.
 
+### Entry selection
+
+Both `load_branch()` and `load_scatter()` accept a half-open tree-entry slice:
+
+```python
+from unrooted.io.root import load_branch, load_scatter
+
+h = load_branch("data.root", "tree", "x", entry_start=1000, entry_stop=2000)
+points = load_scatter("data.root", "tree", "x", "y",
+                      entry_start=1000, entry_stop=2000)
+```
+
+`entry_start` defaults to `0`; `entry_stop=None` reads through the end of the
+tree. Bounds must be nonnegative integers with stop ≥ start; bounds beyond
+the tree's length are clipped. Selection happens before broadcasting and
+flattening, so the bounds count events, not flattened points. All elements
+of a selected jagged event are included. Automatic histogram ranges use only
+the selected x values, before broadcasting. An empty selection needs an
+explicit histogram range; it returns an empty scatter without a range.
+
 ### Profile histogram (two branches)
 
 Provide `y_branch` to profile `y` values against `x`-axis bins.
@@ -228,3 +248,93 @@ for count histograms too — they are fully flattened before binning.
 !!! note
     Incompatible branch shapes (e.g. different outer lengths) raise a
     `ValueError` from awkward-array.
+
+### Chunking and memory
+
+Branch readers process at most `step_size=100_000` tree entries per chunk.
+Set a smaller positive integer to reduce temporary array sizes. Entry counts
+are measured before broadcasting/flattening: one jagged event may contain
+many points, and ROOT baskets also contribute memory. `step_size` is an
+entry limit, not a hard limit on process RAM.
+
+Count histograms accumulate one chunk at a time. Profiles use three passes
+over the selection: extrema/counts, sums relative to a common per-bin origin,
+and centered squared deviations. The extra I/O retains the population
+estimator and large-offset stability while keeping working arrays bounded
+by the chunk and bin count. Automatic range detection adds an x-only pass;
+provide `range=(lo, hi)` to avoid that scan. Interpreted arrays are not cached
+between passes.
+
+For count/profile output, result memory depends on the number of bins.
+Scatter output without `max_points` retains every selected pair, so its result
+memory still grows with the selection. Use an explicit limit when that result
+must be bounded.
+
+### Scatter limits and sampling
+
+```python
+from unrooted.io.root import load_scatter
+
+# A guard: raise ValueError if the selection exceeds 100,000 flattened pairs.
+points = load_scatter("data.root", "tree", "x", "y", max_points=100_000)
+
+# An explicit uniform sample without replacement, with a reproducible seed.
+sample = load_scatter("data.root", "tree", "x", "y",
+                      max_points=100_000, sampling="random", seed=71,
+                      step_size=100_000)
+print(len(sample.x), sample.source_points, sample.sampled, sample.sample_seed)
+```
+
+The default `max_points=None` returns all pairs. Setting a limit defaults to
+`sampling="error"`; it never silently truncates. `sampling="random"` requires
+a positive limit and uses seed `0` by default. A limit at or above the selected
+pair count returns all pairs.
+
+Sampling is uniform over flattened `(x, y)` pairs, including NaN gaps, rather
+than over events. High-multiplicity events contribute more pairs. Coordinates
+stay paired, selected points retain their original order, and the same
+input/selection, seed, and software versions give the same sample across
+chunk sizes. `source_points` records the selected flattened count;
+`sampled` is true only when fewer pairs were retained. `sample_seed` records
+the requested random seed. Working memory is proportional to a chunk plus
+the retained limit; the complete source selection is still scanned.
+
+### Reference workload measurements
+
+The Stage 5 target is 10 million flattened observations per histogram/profile,
+under 1 GiB peak process RAM and 30 seconds per load on the local reference
+workload. Scatter sampling is explicitly requested, with 100,000 retained
+points in the reference run. These targets are measured on synthetic local
+ROOT data, rather than a universal limit for every file or machine.
+
+On arm64 macOS / Python 3.14.6, using 100 bins, an explicit range, and three
+fresh worker processes per case:
+
+| 10-million-observation case | Whole-branch median load | Chunked median load | Whole-branch peak RAM | Chunked peak RAM |
+| --- | --- | --- | --- | --- |
+| Scalar count | 0.468 s | 0.534 s | 262.5 MiB | 74.0 MiB |
+| Jagged count | 0.484 s | 0.490 s | 281.1 MiB | 106.9 MiB |
+| Scalar profile | 0.834 s | 2.352 s | 820.0 MiB | 104.7 MiB |
+| Jagged profile | 0.865 s | 2.315 s | 877.4 MiB | 238.3 MiB |
+
+The jagged fixture has 10 observations per event. Profiles trade additional
+passes for lower memory while staying within the agreed time budget.
+Sampling 100,000 pairs from 10 million took median 0.52–0.61 s and at most
+251.4 MiB during loading; self-contained Plotly HTML was 7.0 MiB. Rendering
+raised peak process RAM to at most 318.7 MiB for that sampled workload.
+
+Reproduce from the source checkout (with development/Plotly dependencies):
+
+```bash
+uv run python -I benchmarks/root_loading.py \
+  --workdir /tmp/unrooted-benchmark --observations 10000000 --repeat 3 \
+  --step-size 100000 --max-points 100000 --render \
+  --report /tmp/unrooted-benchmark/report.json
+```
+
+Add `--auto-range` to include the preliminary range scan. The benchmark
+generates seeded scalar/jagged fixtures and runs each load/export in a fresh
+subprocess. Reports record dependency versions, input and reader hashes,
+load/render time, result/output size, and peak RSS. Fixture generation is
+excluded; filesystem caches are not cleared. Peak values include interpreter
+and library memory. Raw before/after reports are in `benchmarks/results/`.

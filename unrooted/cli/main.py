@@ -279,6 +279,26 @@ def _validate_options(args, specs, tokens, explicit) -> None:
             raise ValueError(f"--{name.replace('_', '-')} requires finite MIN < MAX")
     if args.n_bins < 1:
         raise ValueError("--n-bins must be positive")
+    if args.step_size < 1:
+        raise ValueError("--step-size must be positive")
+    if args.max_points is not None and args.max_points < 1:
+        raise ValueError("--max-points must be positive")
+    if args.seed < 0:
+        raise ValueError("--seed must be nonnegative")
+    if args.sampling == "random" and args.max_points is None:
+        raise ValueError("--sampling random requires --max-points")
+    if "--seed" in explicit and args.sampling != "random":
+        raise ValueError("--seed requires --sampling random")
+    if args.entry_start < 0 or (args.entry_stop is not None and args.entry_stop < 0):
+        raise ValueError("--entry-start and --entry-stop must be nonnegative")
+    if args.entry_stop is not None and args.entry_stop < args.entry_start:
+        raise ValueError("--entry-stop must be greater than or equal to --entry-start")
+    if explicit & {"--entry-start", "--entry-stop", "--step-size"} and not any(
+        spec.draw_type == "branch" for spec in specs
+    ):
+        raise ValueError(
+            "--entry-start, --entry-stop, and --step-size require a branch spec"
+        )
     if args.max_lines < 5:
         raise ValueError("--max-lines must be at least 5")
     ratio = "ratio" in tokens
@@ -292,6 +312,10 @@ def _validate_options(args, specs, tokens, explicit) -> None:
             "--n-bins and --branch-range require a count/profile branch spec"
         )
     scatter_specs = [s.branch_sub_type == "scatter" for s in specs]
+    if explicit & {"--max-points", "--sampling", "--seed"} and not all(scatter_specs):
+        raise ValueError(
+            "--max-points, --sampling, and --seed require scatter branch specs"
+        )
     if any(scatter_specs) and not all(scatter_specs):
         raise ValueError("cannot mix scatter and histogram draw specs in one command")
     if all(scatter_specs):
@@ -584,6 +608,48 @@ marker / line-style overrides
         metavar=("LO", "HI"),
         help="Explicit axis range for branch loading; auto-detected if omitted",
     )
+    branch_grp.add_argument(
+        "--entry-start",
+        type=int,
+        default=0,
+        metavar="N",
+        help="First tree entry to include, before flattening (default: 0)",
+    )
+    branch_grp.add_argument(
+        "--entry-stop",
+        type=int,
+        default=None,
+        metavar="N",
+        help="First tree entry to exclude (default: end of tree)",
+    )
+    branch_grp.add_argument(
+        "--step-size",
+        type=int,
+        default=100_000,
+        metavar="N",
+        help="Maximum tree entries per chunk, not bytes (default: 100000)",
+    )
+    branch_grp.add_argument(
+        "--max-points",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Explicit scatter point limit per dataset (default: no limit)",
+    )
+    branch_grp.add_argument(
+        "--sampling",
+        choices=["error", "random"],
+        default="error",
+        help="Over-limit scatter policy: fail or sample uniformly (default: error)",
+    )
+    branch_grp.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Random sampling seed, nonnegative (default: 0; "
+        "requires --sampling random)",
+    )
 
     p.add_argument(
         "--max-lines",
@@ -619,6 +685,12 @@ def main(argv: list[str] | None = None) -> None:
             args.source,
             n_bins=args.n_bins,
             branch_range=branch_range,
+            entry_start=args.entry_start,
+            entry_stop=args.entry_stop,
+            step_size=args.step_size,
+            max_points=args.max_points,
+            sampling=args.sampling,
+            seed=args.seed,
         )
     except Exception as exc:
         sys.exit(f"unrooted: error loading data: {exc}")
@@ -632,6 +704,13 @@ def main(argv: list[str] | None = None) -> None:
     except ValueError as exc:
         parser.error(str(exc))
     labels = args.label if args.label else [hint or item.name for item, hint in loaded]
+    for item, label in zip(items, labels):
+        if isinstance(item, ScatterData) and item.sampled:
+            print(
+                f"unrooted: {label}: sampled {len(item.x)} of {item.source_points} "
+                f"points uniformly (seed={item.sample_seed})",
+                file=sys.stderr,
+            )
     all_scatter = all(isinstance(item, ScatterData) for item in items)
     try:
         styles = []
