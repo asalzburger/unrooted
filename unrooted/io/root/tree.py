@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from numbers import Integral
 from pathlib import Path
 from typing import Any, cast
 
@@ -10,6 +12,9 @@ import uproot
 from unrooted.core.axis import Axis
 from unrooted.core.histogram import Histogram
 from unrooted.core.scatter import ScatterData
+from unrooted.io.root._sampling import ScatterAccumulator
+
+DEFAULT_STEP_SIZE = 100_000
 
 
 def load_branch(
@@ -21,70 +26,57 @@ def load_branch(
     n_bins: int = 100,
     range: tuple[float, float] | None = None,  # noqa: A002
     label: str = "",
+    entry_start: int = 0,
+    entry_stop: int | None = None,
+    step_size: int = DEFAULT_STEP_SIZE,
 ) -> Histogram:
-    """Load a TTree branch (or branch pair) as a 1-D count or profile histogram.
+    """Load selected tree entries as a count or population-profile histogram.
 
-    When called with only *x_branch*, every value in that branch is counted
-    into a 1-D histogram.  Scalar, ``std::vector<T>``, and
-    ``std::vector<std::vector<T>>`` branch types are all flattened first.
+    Scalars, vectors, and nested jagged branches are flattened. Profile pairs
+    are aligned with awkward.broadcast_arrays within each chunk. Bins are
+    [left, right), including the final right edge. Out-of-range x is omitted.
 
-    When *y_branch* is also given, returns a **profile histogram**: *x_branch*
-    drives the bin axis and in each x-bin the mean, standard error, and
-    spread (min/max) of the corresponding *y_branch* values are stored.  The
-    two branches are aligned with :func:`awkward.broadcast_arrays`, which
-    supports:
+    Count histograms need one accumulation pass. Profiles use three passes:
+    observed extrema/counts, sums shifted by the global per-bin minima, and
+    centered squared deviations. This preserves numerical stability at large
+    offsets without retaining all observations. Automatic ranges require an
+    additional x-only pass before broadcasting.
 
-    1. Trivial × Trivial — scalar × scalar, event-by-event pairing
-    2. Trivial × Vector — scalar × ``std::vector<T>`` (each scalar x is
-       broadcast to every element of the y-vector in the same event)
-    3. Trivial × Jagged — scalar × ``std::vector<std::vector<T>>``
-    4. Vector × Vector — same-shape ``std::vector<T>`` pairs, zipped per event
-    5. Vector × Jagged — ``std::vector<T>`` × ``std::vector<std::vector<T>>``
-       when the outer y-length matches x per event
-
-    Incompatible branch shapes raise a ``ValueError`` from awkward-array.
-
-    Count and profile bins use the same convention: ``[left, right)``, except
-    the last bin includes its right edge. Values outside the range are omitted.
-
-    Profiles retain the population convention: for N entries, ``variances``
-    is ``sum((y - mean)**2) / N**2``. Empty bins have value and variance zero
-    and ``nan`` spread bounds; single-entry bins have variance zero and both
-    spread bounds equal to the observation. Empty trees require an explicit
-    *range* because the automatic range is derived from the data.
+    Profile variance is M2/N². Empty bins have value/variance zero and NaN
+    extrema; single-entry bins have zero variance and equal extrema.
 
     Args:
-        path:     Path to the ROOT file.
-        key:      Tree name inside the file.
-        x_branch: Branch used for x-axis binning (and as the sole branch for
-                  count histograms).
-        y_branch: Branch whose values are profiled per x-bin.  When ``None``
-                  (default) a count histogram of *x_branch* is returned.
-        n_bins:   Number of bins (default 100).
-        range:    ``(lo, hi)`` bin range; auto-detected from *x_branch* data
-                  if ``None``.
-        label:    X-axis label; defaults to *x_branch*.
+        path: ROOT file path.
+        key: Tree path inside the file.
+        x_branch: Branch defining the bin axis.
+        y_branch: Optional branch to profile against x.
+        n_bins: Positive number of bins (default 100).
+        range: Finite (lo, hi), lo < hi; None scans the selected x values.
+        label: X-axis label; defaults to x_branch.
+        entry_start: First entry included, nonnegative (default zero).
+        entry_stop: First entry excluded; None reads to the end. Bounds beyond
+                    the tree length are clipped. Selection precedes flattening.
+        step_size: Maximum entries per chunk (default 100,000). This is not a
+                   byte limit; jagged expansion and ROOT baskets affect memory.
     """
-    with cast(Any, uproot.open(path)) as f:
-        x_ak = f[key][x_branch].array(library="ak")
-        y_ak: Any = (
-            f[key][y_branch].array(library="ak") if y_branch is not None else None
+    _validate_entries(entry_start, entry_stop)
+    _positive_integer(step_size, "step_size")
+    _positive_integer(n_bins, "n_bins")
+    with cast(Any, uproot.open)(path, array_cache=None) as root_file:
+        tree = _get_tree(root_file, key, x_branch, y_branch)
+        bounds = _range(tree, x_branch, range, entry_start, entry_stop, step_size)
+        axis = Axis(np.linspace(*bounds, int(n_bins) + 1), label=label or x_branch)
+        if y_branch is None:
+            counts = np.zeros(axis.n_bins, dtype=np.int64)
+            for x, _ in _chunks(
+                tree, x_branch, None, entry_start, entry_stop, step_size
+            ):
+                counts += np.histogram(x, bins=axis.edges)[0]
+            values = counts.astype(float)
+            return Histogram([axis], values, values.copy(), name=x_branch)
+        return _profile(
+            tree, x_branch, y_branch, axis, entry_start, entry_stop, step_size
         )
-
-    # Range is always derived from the original x values (before broadcasting).
-    x_orig = np.asarray(ak.flatten(x_ak, axis=None), dtype=float)  # type: ignore[arg-type]
-    lo, hi = _resolve_range(x_orig, range)
-    edges = np.linspace(lo, hi, n_bins + 1)
-    axis_label = label or x_branch
-
-    if y_ak is None or y_branch is None:
-        return _count_histogram(x_orig, edges, x_branch, axis_label)
-
-    # Broadcast x and y to a common shape, then flatten both in lockstep.
-    x_bc, y_bc = ak.broadcast_arrays(x_ak, y_ak)  # type: ignore[misc]
-    x_flat = np.asarray(ak.flatten(x_bc, axis=None), dtype=float)  # type: ignore[arg-type]
-    y_flat = np.asarray(ak.flatten(y_bc, axis=None), dtype=float)  # type: ignore[arg-type]
-    return _profile_histogram(x_flat, y_flat, edges, y_branch, axis_label)
 
 
 def load_scatter(
@@ -95,121 +87,192 @@ def load_scatter(
     *,
     label_x: str = "",
     label_y: str = "",
+    entry_start: int = 0,
+    entry_stop: int | None = None,
+    step_size: int = DEFAULT_STEP_SIZE,
+    max_points: int | None = None,
+    sampling: str = "error",
+    seed: int = 0,
 ) -> ScatterData:
-    """Load two TTree branches as a raw (x, y) scatter point cloud.
+    """Load point pairs in chunks, with an optional explicit limit or sample.
 
-    Both branches are broadcast to a common shape (supporting the same scalar,
-    vector, and jagged combinations as :func:`load_branch`) and then fully
-    flattened.  No binning is performed.
+    Entry selection precedes awkward broadcasting and flattening. Without
+    max_points all selected pairs are returned, so result memory grows with
+    the selection. No sampling happens implicitly.
 
     Args:
-        path:     Path to the ROOT file.
-        key:      Tree name inside the file.
-        x_branch: Branch used for the x-axis.
-        y_branch: Branch used for the y-axis.
-        label_x:  X-axis label; defaults to *x_branch*.
-        label_y:  Y-axis label; defaults to *y_branch*.
+        path: ROOT file path.
+        key: Tree path inside the file.
+        x_branch: Branch for x coordinates.
+        y_branch: Branch for y coordinates.
+        label_x: X-axis label; defaults to x_branch.
+        label_y: Y-axis label; defaults to y_branch.
+        entry_start: First entry included, nonnegative (default zero).
+        entry_stop: First entry excluded; None reads to the end. Bounds beyond
+                    the tree length are clipped.
+        step_size: Maximum entries per chunk, not bytes (default 100,000).
+        max_points: Positive maximum retained pairs, or None for all pairs.
+        sampling: 'error' raises when max_points is exceeded. 'random' retains
+                  a uniform sample without replacement over flattened pairs;
+                  requires max_points. Returned points keep their input order.
+        seed: Nonnegative RNG seed (default zero), used by random sampling.
+              Results repeat for the same data/seed across chunk sizes.
     """
-    with cast(Any, uproot.open(path)) as f:
-        x_ak = f[key][x_branch].array(library="ak")
-        y_ak = f[key][y_branch].array(library="ak")
-
-    x_bc, y_bc = ak.broadcast_arrays(x_ak, y_ak)  # type: ignore[misc]
-    x_flat = np.asarray(ak.flatten(x_bc, axis=None), dtype=float)  # type: ignore[arg-type]
-    y_flat = np.asarray(ak.flatten(y_bc, axis=None), dtype=float)  # type: ignore[arg-type]
-
+    _validate_entries(entry_start, entry_stop)
+    _positive_integer(step_size, "step_size")
+    if max_points is not None:
+        _positive_integer(max_points, "max_points")
+    if sampling not in ("error", "random"):
+        raise ValueError("sampling must be 'error' or 'random'")
+    if sampling == "random" and max_points is None:
+        raise ValueError("sampling='random' requires max_points")
+    if isinstance(seed, bool) or not isinstance(seed, Integral) or seed < 0:
+        raise ValueError("seed must be a nonnegative integer")
+    if sampling != "random" and seed != 0:
+        raise ValueError("seed is only used with sampling='random'")
+    accumulator = ScatterAccumulator(max_points, sampling, int(seed))
+    with cast(Any, uproot.open)(path, array_cache=None) as root_file:
+        tree = _get_tree(root_file, key, x_branch, y_branch)
+        for x, y in _chunks(
+            tree, x_branch, y_branch, entry_start, entry_stop, step_size
+        ):
+            assert y is not None
+            accumulator.add(x, y)
+    x, y = accumulator.finish()
     return ScatterData(
-        x=x_flat,
-        y=y_flat,
+        x=x,
+        y=y,
         name=y_branch,
         x_label=label_x or x_branch,
         y_label=label_y or y_branch,
+        source_points=accumulator.total,
+        sample_seed=int(seed) if sampling == "random" else None,
     )
 
 
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
+def _positive_integer(value: int, name: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, Integral) or value <= 0:
+        raise ValueError(f"{name} must be a positive integer")
 
 
-def _resolve_range(
-    data: np.ndarray,
-    range_arg: tuple[float, float] | None,
-) -> tuple[float, float]:
-    if range_arg is not None:
-        return range_arg
-    lo, hi = float(data.min()), float(data.max())
-    if lo == hi:
-        lo, hi = lo - 0.5, lo + 0.5
+def _validate_entries(start: int, stop: int | None) -> None:
+    for name, value in (("entry_start", start), ("entry_stop", stop)):
+        if value is None and name == "entry_stop":
+            continue
+        if isinstance(value, bool) or not isinstance(value, Integral) or value < 0:
+            raise ValueError(f"{name} must be a nonnegative integer")
+    if stop is not None and stop < start:
+        raise ValueError("entry_stop must be greater than or equal to entry_start")
+
+
+def _get_tree(root_file: Any, key: str, x_branch: str, y_branch: str | None) -> Any:
+    tree = root_file[key]
+    if not hasattr(tree, "iterate") or not hasattr(tree, "num_entries"):
+        raise ValueError(f"ROOT object {key!r} must be a tree with iterable branches")
+    for branch in dict.fromkeys(
+        [x_branch, *([y_branch] if y_branch is not None else [])]
+    ):
+        tree[branch]  # Check missing branches even for an empty entry selection.
+    return tree
+
+
+def _flat(values: Any) -> np.ndarray:
+    # Awkward supports axis=None at runtime; its annotations omit it.
+    return np.asarray(ak.flatten(values, axis=None), dtype=float)  # type: ignore[arg-type]
+
+
+def _chunks(
+    tree: Any,
+    x_branch: str,
+    y_branch: str | None,
+    start: int,
+    stop: int | None,
+    step_size: int,
+) -> Iterator[tuple[np.ndarray, np.ndarray | None]]:
+    names = list(
+        dict.fromkeys([x_branch, *([y_branch] if y_branch is not None else [])])
+    )
+    for arrays in tree.iterate(
+        expressions=names,
+        entry_start=int(start),
+        entry_stop=stop,
+        step_size=int(step_size),
+        library="ak",
+        how=dict,
+    ):
+        x = arrays[x_branch]
+        if y_branch is None:
+            yield _flat(x), None
+        else:
+            x, y = ak.broadcast_arrays(x, arrays[y_branch])
+            yield (
+                _flat(x),
+                _flat(y),
+            )
+
+
+def _range(tree, x_branch, explicit, start, stop, step_size) -> tuple[float, float]:
+    if explicit is not None:
+        try:
+            lo, hi = map(float, explicit)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "range must be a finite (lo, hi) pair with lo < hi"
+            ) from exc
+    else:
+        lo, hi = np.inf, -np.inf
+        for x, _ in _chunks(tree, x_branch, None, start, stop, step_size):
+            if not np.isfinite(x).all():
+                raise ValueError("Automatic range requires finite x values")
+            if x.size:
+                lo, hi = min(lo, float(x.min())), max(hi, float(x.max()))
+        if lo == np.inf:
+            raise ValueError(
+                "Automatic range needs at least one x value; provide range=(lo, hi)"
+            )
+        if lo == hi:
+            lo, hi = lo - 0.5, hi + 0.5
+    if not np.isfinite([lo, hi]).all() or lo >= hi:
+        raise ValueError("range must be a finite (lo, hi) pair with lo < hi")
     return lo, hi
 
 
-def _count_histogram(
-    data: np.ndarray,
-    edges: np.ndarray,
-    name: str,
-    label: str,
-) -> Histogram:
-    values, _ = np.histogram(data, bins=edges)
-    values = values.astype(float)
-    return Histogram(
-        axes=[Axis(edges=edges, label=label)],
-        values=values,
-        variances=values.copy(),
-        name=name,
-    )
+def _binned_pairs(x, y, edges) -> tuple[np.ndarray, np.ndarray]:
+    in_range = (x >= edges[0]) & (x <= edges[-1])
+    x, y = x[in_range], y[in_range]
+    indices = np.searchsorted(edges[1:], x, side="right")
+    return np.clip(indices, 0, len(edges) - 2), y
 
 
-def _profile_histogram(
-    x_data: np.ndarray,
-    y_data: np.ndarray,
-    edges: np.ndarray,
-    name: str,
-    label: str,
-) -> Histogram:
-    n_bins = len(edges) - 1
-    lo, hi = edges[0], edges[-1]
-
-    # Keep only (x, y) pairs whose x falls within [lo, hi].
-    in_range = (x_data >= lo) & (x_data <= hi)
-    x_valid = x_data[in_range]
-    y_valid = y_data[in_range]
-
-    # Match np.histogram: internal edges belong to the bin on their right;
-    # the final right edge is included in the last bin.
-    idx = np.searchsorted(edges[1:], x_valid, side="right")
-    idx = np.clip(idx, 0, n_bins - 1)
-
-    counts = np.bincount(idx, minlength=n_bins)
-    mins = np.full(n_bins, np.inf)
-    maxs = np.full(n_bins, -np.inf)
-    np.minimum.at(mins, idx, y_valid)
-    np.maximum.at(maxs, idx, y_valid)
-
+def _profile(tree, x_branch, y_branch, axis, start, stop, step_size) -> Histogram:
+    n_bins = axis.n_bins
+    counts = np.zeros(n_bins, dtype=np.int64)
+    minima, maxima = np.full(n_bins, np.inf), np.full(n_bins, -np.inf)
+    # A common origin per bin keeps all arithmetic away from the large offset.
+    for x, y in _chunks(tree, x_branch, y_branch, start, stop, step_size):
+        indices, values = _binned_pairs(x, y, axis.edges)
+        counts += np.bincount(indices, minlength=n_bins)
+        np.minimum.at(minima, indices, values)
+        np.maximum.at(maxima, indices, values)
     has_data = counts > 0
     safe_counts = np.where(has_data, counts, 1)
-
-    # Work relative to the minimum in each bin so a large common offset
-    # cannot swamp the mean or its squared deviations. A centered second
-    # pass avoids subtracting nearly equal raw second moments.
-    shifted = y_valid - mins[idx]
-    shifted_sums = np.bincount(idx, weights=shifted, minlength=n_bins)
+    shifted_sums = np.zeros(n_bins)
+    for x, y in _chunks(tree, x_branch, y_branch, start, stop, step_size):
+        indices, values = _binned_pairs(x, y, axis.edges)
+        shifted_sums += np.bincount(
+            indices, weights=values - minima[indices], minlength=n_bins
+        )
     shifted_means = shifted_sums / safe_counts
-    means = np.where(has_data, mins + shifted_means, 0.0)
-    deviations = shifted - shifted_means[idx]
-    sum_sq_deviations = np.bincount(
-        idx, weights=deviations**2, minlength=n_bins,
-    )
-    # Preserve the population convention: Var(mean) = sum((y - mean)^2) / N^2.
-    var_means = sum_sq_deviations / safe_counts / safe_counts
-    mins = np.where(has_data, mins, np.nan)
-    maxs = np.where(has_data, maxs, np.nan)
-
+    m2 = np.zeros(n_bins)
+    for x, y in _chunks(tree, x_branch, y_branch, start, stop, step_size):
+        indices, values = _binned_pairs(x, y, axis.edges)
+        deviations = (values - minima[indices]) - shifted_means[indices]
+        m2 += np.bincount(indices, weights=deviations**2, minlength=n_bins)
     return Histogram(
-        axes=[Axis(edges=edges, label=label)],
-        values=means,
-        variances=var_means,
-        name=name,
-        spread_min=mins,
-        spread_max=maxs,
+        [axis],
+        np.where(has_data, minima + shifted_means, 0.0),
+        m2 / safe_counts / safe_counts,
+        name=y_branch,
+        spread_min=np.where(has_data, minima, np.nan),
+        spread_max=np.where(has_data, maxima, np.nan),
     )

@@ -26,9 +26,9 @@ incompatible-bin ratios, invalid efficiency inputs, and CLI inconsistencies.
 | 1 | Installed distributions work outside the checkout | Complete |
 | 2 | Profile calculations agree with numerical references | Complete |
 | 3 | Data and statistical contracts are explicit and enforced | Complete |
-| 4 | CLI and plotting backends honor their public contracts | Complete locally |
-| 5 | Data loading has a tested resource envelope | Next |
-| 6 | CI and contributor setup reproduce supported configurations | Planned |
+| 4 | CLI and plotting backends honor their public contracts | Complete |
+| 5 | Data loading has a tested resource envelope | Complete locally |
+| 6 | CI and contributor setup reproduce supported configurations | Next |
 | 7 | A release candidate passes installation and documentation rehearsal | Planned |
 
 ## Stage 1 Installed distributions
@@ -171,26 +171,63 @@ passed the packaging smoke check outside the checkout, including scatter
 exports and the missing-Plotly diagnostic. Successful Plotly static-image
 export was not exercised: HTML export and the static-export failure path
 were tested, and optional Kaleido/browser setup is documented.
+The test and distribution CI jobs passed on
+[PR 29](https://github.com/asalzburger/unrooted/pull/29), which was merged.
 
 ## Stage 5 Realistic workloads
 
-- [ ] Agree representative histogram and scatter workloads and measure the
+- [x] Agree representative histogram and scatter workloads and measure the
   current runtime, peak memory, and output size.
-- [ ] Add entry selection and bounds for branch loading.
-- [ ] Implement chunked histogram/profile accumulation where needed for the
+- [x] Add entry selection and bounds for branch loading.
+- [x] Implement chunked histogram/profile accumulation where needed for the
   agreed workloads, preserving the numerical contracts from stages 2 and 3.
-- [ ] Provide an explicit scatter point limit or sampling option, with
+- [x] Provide an explicit scatter point limit or sampling option, with
   reproducible sampling when enabled.
-- [ ] Document memory behavior, limits, and any sampling in the loading and
+- [x] Document memory behavior, limits, and any sampling in the loading and
   CLI guides.
 
-**Decision together:** choose the dataset sizes and resource budgets needed
-for the first release. Use those to determine the required streaming and
-sampling scope.
+**Decision:** target 10 million flattened observations per histogram/profile,
+under 1 GiB peak process RAM and 30 seconds per load on the local reference
+workload. Scatter retains up to 100,000 points only when explicitly requested.
+Use seeded uniform sampling without replacement over flattened pairs, with
+retained/source counts and the seed available to the caller. The user accepted
+these recommended targets on October 22, 2026.
+
+**Behavior:** tree entry selection precedes broadcasting/flattening. Readers
+use chunks of at most 100,000 entries by default; count accumulation uses one
+pass and stable population-profile accumulation uses three. Automatic ranges
+add an x-only pass. Scatter without a limit returns all selected pairs;
+`max_points` defaults to an explicit overflow error, while `sampling="random"`
+opts into a repeatable uniform sample. The CLI reports actual sampling on
+stderr. Chunk size is an entry limit, not a byte/RSS guarantee for arbitrary
+jagged events or ROOT baskets.
 
 **Completion:** representative workloads meet the agreed resource budgets;
 chunked results match reference results, and sampling is explicit and
 reproducible.
+
+**Verification on October 22, 2026:** 684 unit tests passed on Python 3.11.15
+and 3.14.6. New tests cover event bounds, chunk-edge binning, all supported
+nested branch pair shapes, an 80-digit Decimal profile reference (variance
+relative tolerance `1e-12`, mean absolute tolerance one float64 spacing at
+`1e12`), sparse/NaN bins, explicit limits, seeded pair sampling across chunk
+sizes, and CLI behavior. Package/changed-test/benchmark Ruff, package Pyright,
+strict documentation build, and `git diff --check` passed. A wheel built from
+the sdist passed runtime-only installation checks outside the checkout,
+including entry selection and sampling.
+
+The reproducible benchmark uses seeded local scalar and jagged ROOT inputs,
+10 observations per jagged event, 100 bins, and three fresh worker processes
+per case on arm64 macOS / Python 3.14.6. All measured 10-million-observation
+loads, including automatic ranges and explicitly sampled scatter, stayed
+below 2.51 s and 252 MiB peak RSS. Jagged profile peak memory fell from
+877.4 MiB to 238.3 MiB with an explicit range; median load time changed from
+0.865 s to 2.315 s because of the extra passes. A 100,000-point scatter sample
+from 10 million pairs produced 7.0 MiB HTML and used at most 318.7 MiB during
+export. These are results for the recorded reference configuration, not a
+universal guarantee. Raw reports, versions, source/input hashes, and before/
+after measurements are in `benchmarks/results/`; the loading guide explains
+how to reproduce them. Plotly static image export remains outside this check.
 
 ## Stage 6 CI and contributor workflow
 

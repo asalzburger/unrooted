@@ -53,6 +53,12 @@ defined. Sparse profiles may therefore have a finite value and NaN spread.
 `ScatterData(x, y)` follows the same numeric rules and requires flat arrays of
 equal length. Empty arrays and NaN gaps are allowed.
 
+Tree readers also attach scatter provenance: `source_points` is the selected
+flattened count, `sample_seed` records an explicitly requested random sampler,
+and the `sampled` property indicates whether fewer pairs were retained.
+Manually created objects may leave those optional fields unset. See
+[scatter limits and sampling](loading-root.md#scatter-limits-and-sampling).
+
 ### Ownership and mutation
 
 Core constructors use `np.asarray`; they borrow arrays when conversion is
