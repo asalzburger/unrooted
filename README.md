@@ -77,7 +77,7 @@ unrooted --input data.root --draw hist:hx --output histogram.png
 
 ### Python API
 
-For a ROOT file containing histograms named `hx` and `hy`:
+For a ROOT file containing histograms named `hx` and `hy` with identical edges:
 
 ```python
 from unrooted.io.root import load
@@ -94,6 +94,12 @@ ax.figure.savefig("histogram.png")
 ax_main, ax_ratio = overlay([h1, h2], labels=["hx", "hy"], ratio=True)
 ax_main.figure.savefig("overlay.png")
 ```
+
+Ratios require exactly matching bin edges and assume independent uncertainties.
+Efficiency readers instead require unweighted integer passed/total counts and
+return Wilson interval bounds (68.27% by default). See the
+[data and statistical contracts](docs/user-guide/histograms.md) and
+[efficiency guide](docs/user-guide/loading-root.md#efficiency-histograms).
 
 ---
 

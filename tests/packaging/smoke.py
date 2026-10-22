@@ -34,7 +34,7 @@ def main() -> None:
         import numpy as np
         import uproot
 
-        from unrooted.io.root import load
+        from unrooted.io.root import load, load_efficiency
         from unrooted.plot import StyleSet
         from unrooted.plot.mpl import generate_stylesheet, overlay, plot
 
@@ -64,6 +64,17 @@ def main() -> None:
         with uproot.recreate(root_path) as root_file:
             root_file["hx"] = (np.array([2.0, 4.0, 3.0]), edges)
             root_file["hy"] = (np.array([3.0, 2.0, 5.0]), edges)
+            root_file["passed"] = (np.array([0.0, 2.0, 4.0]), edges)
+            root_file["total"] = (np.array([4.0, 4.0, 4.0]), edges)
+
+        efficiency = load_efficiency(root_path, "passed", "total")
+        np.testing.assert_allclose(
+            efficiency.spread_min, [0, 0.5 - np.sqrt(5) / 10, 0.8]
+        )
+        np.testing.assert_allclose(
+            efficiency.spread_max, [0.2, 0.5 + np.sqrt(5) / 10, 1]
+        )
+        np.testing.assert_allclose(efficiency.variances, [0, 0.0625, 0])
 
         h1, h2 = load(root_path, "hx"), load(root_path, "hy")
         ax = plot(h1)

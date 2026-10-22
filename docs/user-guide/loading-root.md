@@ -70,7 +70,7 @@ plot(hp, style=style)
 
 ## Efficiency histograms
 
-ROOT's `TEfficiency` class cannot currently be read by uproot.  Use
+Direct `TEfficiency` loading is unsupported. Use
 `load_efficiency()` with a **passed** and a **total** `TH1` stored as
 separate keys — a common pattern in analysis frameworks:
 
@@ -84,10 +84,34 @@ eff = load_efficiency("analysis.root", "h_passed", "h_total")
 |-----------|---------|
 | `eff.values` | Per-bin efficiency = passed / total |
 | `eff.variances` | Per-bin binomial variance = eff × (1 − eff) / total |
-| `eff.spread_min` | eff − σ, clamped to 0 (Gaussian ±σ CI) |
-| `eff.spread_max` | eff + σ, clamped to 1 |
+| `eff.spread_min` | Lower Wilson interval bound |
+| `eff.spread_max` | Upper Wilson interval bound |
 
-Bins where total = 0 carry `nan` for all fields.
+The default confidence level is `0.6826894921370859` (68.27%, equivalent to
+the central Gaussian ±1σ probability). Pass `confidence_level=0.95` for 95%
+intervals. The method is the [Wilson score interval without continuity
+correction](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats._result_classes.BinomTestResult.proportion_ci.html).
+It replaces the previous clamped Gaussian spread; the binomial variance field
+is unchanged. No additional statistical dependency is required.
+
+For `N > 0`, `p = passed/N`, and the standard-normal quantile `z` at
+`(1 + confidence_level)/2`, the bounds are
+
+```text
+center = (p + z²/(2N)) / (1 + z²/N)
+radius = z * sqrt(p*(1-p)/N + z²/(4N²)) / (1 + z²/N)
+bounds = center ± radius
+```
+
+Bounds lie in `[0, 1]` and retain nonzero width at zero and full acceptance.
+At the default confidence level, `0/4` has bounds `[0, 0.2]`, `2/4` has bounds
+approximately `[0.276393, 0.723607]`, and `4/4` has bounds `[0.8, 1]`.
+Bins where total = 0 carry `nan` for all four arrays; no inference is made
+from an empty bin.
+
+`errors = sqrt(variances)` still describes the Gaussian binomial standard
+error and is zero at the endpoints. To show Wilson bounds, enable
+`spread_display`; changing the confidence level affects only the bounds.
 
 ```python
 from unrooted.plot.mpl import plot
@@ -96,14 +120,21 @@ from unrooted.plot.style import HistogramStyle
 style = HistogramStyle(
     line_color="#1A4F8A",
     marker="o",
-    error_display="bar",    # ±σ error bars
-    spread_display="band",  # shaded ±σ CI
+    error_display=None,
+    spread_display="band",  # shaded Wilson interval
 )
 plot(eff, style=style)
 ```
 
-The function validates that the two histograms have the same number of bins
-and matching edges, raising `ValueError` otherwise.
+Inputs must be one-dimensional TH1 count histograms with exactly identical
+edges. Counts must be finite, nonnegative integers, with passed ≤ total in
+every bin. Weighted and fractional efficiencies are unsupported. ROOT
+variances must match counts (relative tolerance `1e-12`); a stored `Sumw2`
+array with unit-weight Poisson variances is accepted. ROOT cannot always
+establish the history of weights from aggregated counts, so callers must
+supply unweighted event counts. Profiles and TH2 inputs are rejected.
+Invalid data or a confidence level outside `(0, 1)` raises `ValueError`.
+Flow bins are excluded from the efficiency calculation.
 
 ---
 

@@ -24,9 +24,9 @@ incompatible-bin ratios, invalid efficiency inputs, and CLI inconsistencies.
 | Stage | Outcome | Status |
 | --- | --- | --- |
 | 1 | Installed distributions work outside the checkout | Complete |
-| 2 | Profile calculations agree with numerical references | Complete locally |
-| 3 | Data and statistical contracts are explicit and enforced | Next |
-| 4 | CLI and plotting backends honor their public contracts | Planned |
+| 2 | Profile calculations agree with numerical references | Complete |
+| 3 | Data and statistical contracts are explicit and enforced | Complete locally |
+| 4 | CLI and plotting backends honor their public contracts | Next |
 | 5 | Data loading has a tested resource envelope | Planned |
 | 6 | CI and contributor setup reproduce supported configurations | Planned |
 | 7 | A release candidate passes installation and documentation rehearsal | Planned |
@@ -89,30 +89,45 @@ mean absolute tolerance of one float64 spacing at `1e12`. A wheel built from
 the sdist passed the runtime-only packaging smoke check and direct profile
 regressions outside the checkout on Python 3.11. Package/changed-test Ruff,
 package Pyright, strict documentation build, and `git diff --check` passed.
+The test and distribution CI jobs passed on
+[PR 27](https://github.com/asalzburger/unrooted/pull/27), which was merged.
 
 ## Stage 3 Data and statistical contracts
 
-- [ ] Validate numeric axis edges, histogram dimensionality, array shapes,
+- [x] Validate numeric axis edges, histogram dimensionality, array shapes,
   variance signs, spread pairs, and scatter dimensions at public boundaries.
-- [ ] Define allowed NaNs, array ownership/mutation, and flow-bin semantics.
-- [ ] Require compatible bin edges for ratios in every backend; keep ordinary
+- [x] Define allowed NaNs, array ownership/mutation, and flow-bin semantics.
+- [x] Require compatible bin edges for ratios in every backend; keep ordinary
   graphical overlay behavior explicit.
-- [ ] Validate efficiency inputs, including dimensions and accepted/total
+- [x] Validate efficiency inputs, including dimensions and accepted/total
   constraints; reject unsupported storage types with actionable errors.
-- [ ] Make supported boost storage and axis types explicit, including the
+- [x] Make supported boost storage and axis types explicit, including the
   policy for weighted profiles and categorical axes.
-- [ ] Document the independent-input assumption for ratio uncertainties and
+- [x] Document the independent-input assumption for ratio uncertainties and
   distinguish profile extrema, standard-deviation bands, and efficiency
   intervals.
 
-**Decision together:** choose the initial weighted-efficiency policy and
-efficiency interval method. State confidence levels and the behavior at zero
-and full acceptance. Prefer explicit unsupported cases until their statistical
-meaning is implemented and tested.
+**Decision:** use Wilson score intervals without continuity correction at
+confidence level `0.6826894921370859` (68.27%) by default. Both readers accept
+a keyword-only `confidence_level` in `(0, 1)`. Retain binomial variance
+`p*(1-p)/N` separately from the interval bounds. Intervals have nonzero width
+at zero and full acceptance; zero-total bins have NaN in all four arrays.
+Require 1D unweighted integer counts with exactly matching edges and
+accepted ≤ total. Weighted/fractional efficiencies, boost weighted profiles,
+and categorical/Boolean axes remain explicitly unsupported.
 
 **Completion:** invalid inputs fail with clear exceptions, incompatible bins
 cannot produce ratios, and all supported statistical interpretations have
 small numerical examples and tests.
+
+**Verification on October 22, 2026:** 523 unit tests passed on Python 3.11.15
+and 3.14.6, including analytic one-sigma Wilson bounds, a 95% reference,
+invalid inputs, exact-edge ratios, large integer ratio uncertainties,
+mutation, reader ownership, and multidimensional flow padding. A wheel built
+from the sdist passed the runtime-only packaging smoke check outside the
+checkout on Python 3.11, including Wilson endpoint bounds. Package and
+changed-test Ruff, package Pyright, strict documentation build, and
+`git diff --check` passed. The generated efficiency figure was inspected.
 
 ## Stage 4 CLI and backend consistency
 

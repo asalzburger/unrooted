@@ -100,8 +100,9 @@ show ±SE (standard error of the mean).
 ## Efficiency histogram
 
 Loaded via `load_efficiency()` from a pair of `TH1` histograms
-(passed / total).  Values are per-bin efficiency; the shaded band and error
-bars show the Gaussian ±σ confidence interval, clamped to [0, 1].
+(passed / total). Values are per-bin efficiency. The shaded band shows the
+68.27% Wilson interval; error bars show the separate Gaussian binomial
+standard error. Wilson bounds retain nonzero width at zero and full acceptance.
 
 === "Matplotlib"
 
@@ -142,8 +143,9 @@ individual measurements); error bars show ±SE (standard error of the mean).
 
 Converted via
 [`unrooted.io.boost.load_efficiency`][unrooted.io.boost.reader.load_efficiency]
-from a pair of `Double`-storage histograms (accepted, total).  The shaded band
-and error bars show the Gaussian ±σ confidence interval, clamped to [0, 1].
+from a pair of unweighted `Double`-storage histograms (accepted, total). The
+shaded band shows the 68.27% Wilson interval; error bars show the separate
+Gaussian binomial standard error.
 
 ![boost-histogram efficiency](../assets/examples/mpl_boost_efficiency.png)
 

@@ -34,6 +34,10 @@ def overlay(
     """
     if not hists:
         raise ValueError("hists must not be empty")
+    for hist in hists:
+        hist.validate()
+        if ratio:
+            hists[0].require_compatible_binning(hist)
     if any(h.ndim != 1 for h in hists):
         raise ValueError("overlay only supports 1D histograms")
     if labels is not None and len(labels) != len(hists):
@@ -89,7 +93,7 @@ def _add_ratio_panel(
     colors: list[str | tuple[float, ...]],
     ratio_range: tuple[float, float] | None = None,
 ) -> None:
-    ref_values = hists[0].values
+    ref_values = np.asarray(hists[0].values, dtype=float)
     ref_errors = hists[0].errors
     edges = hists[0].axes[0].edges
     centers = hists[0].axes[0].centers

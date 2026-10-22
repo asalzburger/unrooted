@@ -25,6 +25,7 @@ def plot(
         set_axis_labels: When ``True`` (default), write *x_label* / *y_label*
                          and *title* onto the axes.
     """
+    scatter.validate()
     if ax is None:
         _, ax = plt.subplots()
     if style is None:

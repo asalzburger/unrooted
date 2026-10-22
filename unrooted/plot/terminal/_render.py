@@ -104,15 +104,16 @@ def render(
     show_ratio = ratio and n_hists > 1
 
     # ---------------------------------------------------------------- scaling
-    global_max = max(
-        (float(v.max()) for v in values_list if v.size > 0),
-        default=0.0,
-    )
+    finite_values = [v[np.isfinite(v)] for v in values_list]
+    global_max = max((float(v.max()) for v in finite_values if v.size), default=0.0)
     if global_max <= 0.0:
         global_max = 1.0  # avoid division by zero for empty/all-zero histograms
 
     scaled: list[np.ndarray] = [
-        np.clip(np.round(vals / global_max * max_lines).astype(int), 0, max_lines)
+        np.clip(
+            np.round(np.nan_to_num(vals, nan=0.0) / global_max * max_lines).astype(int),
+            0, max_lines,
+        )
         for vals in values_list
     ]
 

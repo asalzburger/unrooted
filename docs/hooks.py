@@ -188,7 +188,7 @@ def _gen_efficiency() -> None:
     plot(eff, ax=ax, style=HistogramStyle.as_efficiency().with_color(ss.colors[0]))
     ax.set_ylim(0, 1.1)
     ax.axhline(1.0, color="gray", linestyle=":", linewidth=0.8)
-    ax.set_title("Efficiency: passed / total with ±σ CI")
+    ax.set_title("Efficiency: passed / total with 68.27% Wilson interval")
     fig.tight_layout()
     fig.savefig(_OUT / "mpl_efficiency.png", dpi=120, bbox_inches="tight")
     plt.close(fig)

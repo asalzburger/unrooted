@@ -36,6 +36,49 @@ h = Histogram(
 | `spread_min` | `ndarray \| None` | Optional lower spread bound; meaning depends on the reader |
 | `spread_max` | `ndarray \| None` | Optional upper spread bound; meaning depends on the reader |
 
+### Validation and missing data
+
+Construction raises `ValueError` for invalid data. An axis must have at least
+two finite, strictly increasing, one-dimensional numeric edges; edges are
+converted to float64. A histogram needs at least one axis, and `values` and
+`variances` must have shape `(axis_0.n_bins, axis_1.n_bins, ...)`. Variances
+must be nonnegative. Boolean, complex, string, and object arrays are rejected.
+
+Values may be negative, for example after a weighted fill. Histogram arrays
+may contain NaN to mark missing data or uncertainty; infinity is rejected.
+Spread bounds must be supplied together, match the values' shape, have paired
+NaN positions, be ordered, and enclose the central values wherever both are
+defined. Sparse profiles may therefore have a finite value and NaN spread.
+
+`ScatterData(x, y)` follows the same numeric rules and requires flat arrays of
+equal length. Empty arrays and NaN gaps are allowed.
+
+### Ownership and mutation
+
+Core constructors use `np.asarray`; they borrow arrays when conversion is
+unnecessary. Mutating an input array can change the object, and axis objects
+are shared. Use `.copy()` on your inputs when you need isolation. Readers
+return independent snapshots of their source data. Histogram values,
+variances, and flow arrays from readers do not share storage with each other.
+
+Objects remain mutable. Call `h.validate()` or `scatter.validate()` after
+editing their arrays or axes. Public plotting functions validate again before
+drawing. Validation does not recompute variances, spread, or flow contents
+after a value is changed; updating related quantities remains your responsibility.
+
+### Flow bins
+
+`values` and `variances` exclude flow bins. If present, `overflow` is a full
+values array of shape `(n_0 + 2, n_1 + 2, ...)`: index `0` on each axis is
+underflow, indices `1:-1` are ordinary bins, and the final index is overflow.
+This includes multidimensional corner flows. It stores contents, not flow
+variances, and plotting uses only `values`.
+
+ROOT readers populate both flow slots per axis. Boost readers pad disabled
+flow slots with NaN, distinguishing unavailable data from an observed zero.
+Branch readers set `overflow=None` and omit out-of-range observations.
+Flow arrays are snapshots and do not synchronize with later edits to `values`.
+
 ### Profile histograms
 
 When `load_branch()` returns a profile histogram, `spread_min` and

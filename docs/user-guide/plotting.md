@@ -80,9 +80,18 @@ ax = plot(h, style=style)
 (ax, ax_r) = overlay([h1, h2], labels=["h1", "h2"], ratio=True)
 ```
 
-The ratio panel shows `h_i / h_0` for each subsequent histogram.  Uncertainties
-are propagated via Gaussian error propagation.  Bins where the reference is zero
-are shown as `NaN` (no marker).
+The ratio panel shows `h_i / h_0` for each subsequent histogram. Every backend
+requires exactly identical bin edges and dimensions for ratios; there is no
+automatic rebinning or approximate edge matching. Ordinary Matplotlib and
+Plotly overlays may use different grids when `ratio=False`.
+
+Graphical ratio uncertainties use Gaussian propagation with **independent
+inputs**: for numerator `B` and reference `A`,
+`Var(B/A) = Var(B)/A² + B² Var(A)/A⁴`. No covariance is included. This does
+not describe a passed/total efficiency or another correlated ratio; use an
+efficiency reader for the supported binomial case. Zero reference bins are
+shown as NaN gaps. For `A=10`, `B=5`, and Poisson variances, the ratio is `0.5`
+and its propagated variance is `0.075`.
 
 The ratio panel inherits the **style of B**: line color, line style, line width,
 error display mode, and error color all come from the corresponding
@@ -283,6 +292,12 @@ from unrooted.plot.terminal import plot, overlay
 The terminal backend renders 1D histograms directly as a multi-line unicode
 string — no display library, no GUI, no file I/O required.  Call `print()` on
 the result to display it anywhere: a notebook cell, a CI log, an SSH session.
+
+Terminal plots require nonnegative values and render NaNs as gaps without
+including them in the vertical scale. Negative values raise `ValueError`.
+Overlays require exactly identical edges even without a ratio panel because
+the histograms share character columns. Graphical backends support negative
+values and ordinary overlays on different grids.
 
 !!! note
     Requires a monospace font with unicode support in your terminal.

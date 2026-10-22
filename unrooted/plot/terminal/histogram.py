@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import numpy as np
+
 from unrooted.core.histogram import Histogram
 from unrooted.plot.terminal._render import MAX_BINS, render
 
@@ -22,9 +24,12 @@ def plot(hist: Histogram, max_lines: int = 40) -> str:
         A multi-line unicode string.  Pass it to ``print()`` to display.
 
     Raises:
-        ValueError: If the histogram is not 1D or has more than
-                    :data:`~unrooted.plot.terminal._render.MAX_BINS` bins.
+        ValueError: If the data is invalid, has negative values, is not 1D,
+                    or has more than :data:`MAX_BINS` bins.
     """
+    hist.validate()
+    if np.any(hist.values < 0):
+        raise ValueError("Terminal backend requires nonnegative bin values")
     if hist.ndim != 1:
         raise ValueError(
             f'Terminal backend only supports 1D histograms, got {hist.ndim}D'
@@ -63,7 +68,7 @@ def overlay(
 
     Args:
         hists:       1D histograms to overlay.  At most 4 are supported, and
-                     all must have the same number of bins.
+                     all must have exactly identical bin edges.
         labels:      Optional legend labels, one per histogram.
         max_lines:   Height of the plot area in terminal rows (minimum 5).
         ratio:       When ``True``, append a ratio panel (requires ≥ 2 hists).
@@ -74,11 +79,16 @@ def overlay(
 
     Raises:
         ValueError: If any histogram is not 1D, the histograms have
-                    different bin counts, more than 4 are supplied, or
-                    ``labels`` length does not match.
+                    different bin edges, negative values, invalid data,
+                    more than 4 are supplied, or ``labels`` length does not match.
     """
     if not hists:
         raise ValueError('hists must not be empty')
+    for hist in hists:
+        hist.validate()
+        if np.any(hist.values < 0):
+            raise ValueError("Terminal backend requires nonnegative bin values")
+        hists[0].require_compatible_binning(hist)
     if any(h.ndim != 1 for h in hists):
         raise ValueError('Terminal backend only supports 1D histograms')
     if len(hists) > 4:
@@ -87,8 +97,6 @@ def overlay(
         raise ValueError('labels must have the same length as hists')
 
     n_bins = len(hists[0].axes[0].edges) - 1
-    if any(len(h.axes[0].edges) - 1 != n_bins for h in hists[1:]):
-        raise ValueError('All histograms must have the same number of bins for overlay')
     if n_bins > MAX_BINS:
         raise ValueError(
             f'Terminal backend supports at most {MAX_BINS} bins, got {n_bins}'
