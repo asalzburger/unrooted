@@ -6,54 +6,140 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+env:
+  MPLBACKEND: Agg
+  PYTHONDONTWRITEBYTECODE: "1"
+
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: true
+      - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        with:
+          version: "0.13.5"
+          python-version: "3.11"
+          enable-cache: true
+      - name: Install locked contributor and documentation environment
+        run: uv sync --locked --group docs --extra plotly
+      - name: Lint all Python sources
+        run: uv run --no-sync ruff check .
+      - name: Type check package
+        run: uv run --no-sync pyright
+      - name: Execute README and getting-started examples
+        run: uv run --no-sync python -I tests/documentation/smoke.py
+      - name: Build documentation strictly
+        run: uv run --no-sync mkdocs build --strict --site-dir "$RUNNER_TEMP/site"
+      - name: Check working tree
+        run: test -z "$(git status --porcelain)"
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Install dependencies
-        run: uv sync --extra dev
-
-      - name: Lint
-        run: uv run ruff check unrooted/
-
-      - name: Type check
-        run: uv run pyright unrooted/
-
+  test:
+    name: test (${{ matrix.os }}, Python ${{ matrix.python }}, ${{ matrix.backend }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python: "3.11", backend: base}
+          - {os: ubuntu-latest, python: "3.12", backend: plotly}
+          - {os: ubuntu-latest, python: "3.13", backend: plotly}
+          - {os: ubuntu-latest, python: "3.14", backend: plotly}
+          - {os: ubuntu-latest, python: "3.15", backend: plotly}
+          - {os: macos-latest, python: "3.11", backend: plotly}
+          - {os: macos-latest, python: "3.15", backend: base}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        with:
+          version: "0.13.5"
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          cache-suffix: ${{ matrix.os }}-${{ matrix.python }}-${{ matrix.backend }}
+      - name: Install locked base environment
+        if: matrix.backend == 'base'
+        run: uv sync --locked
+      - name: Confirm Plotly is absent from base environment
+        if: matrix.backend == 'base'
+        run: uv run --no-sync python -c "import importlib.util; assert importlib.util.find_spec('plotly') is None"
+      - name: Install locked Plotly environment
+        if: matrix.backend == 'plotly'
+        run: uv sync --locked --extra plotly
       - name: Test
-        run: uv run pytest tests/unit_tests/ -v
+        run: uv run --no-sync pytest -q
+      - name: Check working tree
+        run: test -z "$(git status --porcelain)"
+
+  minimum:
+    name: minimum dependencies (Python 3.11, Plotly)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        with:
+          version: "0.13.5"
+          python-version: "3.11"
+          enable-cache: true
+          cache-suffix: minimum
+      - name: Install locked test tools
+        run: uv sync --locked
+      - name: Install lowest allowed direct runtime and Plotly dependencies
+        run: uv pip install --python .venv/bin/python --resolution lowest-direct --upgrade -e '.[plotly]'
+      - name: Test without resynchronizing to the lockfile
+        run: uv run --no-sync pytest -q
+      - name: Check working tree
+        run: test -z "$(git status --porcelain)"
 
   distribution:
     runs-on: ubuntu-latest
-    env:
-      MPLBACKEND: Agg
-      PYTHONDONTWRITEBYTECODE: "1"
+    strategy:
+      matrix:
+        python: ["3.11", "3.15"]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv and Python
-        uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
         with:
-          python-version: "3.11"
+          version: "0.13.5"
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          cache-suffix: wheel-${{ matrix.python }}
+
+      - name: Install locked build tools
+        run: uv sync --locked
 
       - name: Build sdist and wheel
         run: |
-          uv build --sdist --out-dir dist
-          uv build --wheel dist/*.tar.gz --out-dir dist
+          uv build --no-build-isolation --sdist --out-dir dist
+          uv build --no-build-isolation --wheel dist/*.tar.gz --out-dir dist
 
       - name: Install wheel with runtime dependencies
         run: |
           uv venv "$RUNNER_TEMP/unrooted-wheel"
           uv pip install --python "$RUNNER_TEMP/unrooted-wheel/bin/python" dist/*.whl
 
-      - name: Check installed wheel outside the checkout
+      - name: Check installed base wheel outside the checkout
         working-directory: ${{ runner.temp }}
         run: |
           "$RUNNER_TEMP/unrooted-wheel/bin/python" -I \
             "$GITHUB_WORKSPACE/tests/packaging/smoke.py"
+
+      - name: Install optional Plotly dependency
+        run: uv pip install --python "$RUNNER_TEMP/unrooted-wheel/bin/python" 'unrooted[plotly]'
+
+      - name: Check installed Plotly wheel outside the checkout
+        working-directory: ${{ runner.temp }}
+        run: |
+          "$RUNNER_TEMP/unrooted-wheel/bin/python" -I \
+            "$GITHUB_WORKSPACE/tests/packaging/smoke.py"
+
+      - name: Check working tree
+        run: test -z "$(git status --porcelain)"

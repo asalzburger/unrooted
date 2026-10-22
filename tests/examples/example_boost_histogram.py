@@ -3,6 +3,7 @@
 Run with:
     uv run python tests/examples/example_boost_histogram.py
 """
+
 from __future__ import annotations
 
 import pickle
@@ -39,7 +40,9 @@ def main() -> None:
 
     # --- Efficiency ---
     eff_data = boost_data["trackeff_vs_eta"]
-    eff = load_efficiency(eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta")
+    eff = load_efficiency(
+        eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta"
+    )
     print(f"\nefficiency: ndim={eff.ndim}, bins={eff.values.shape[0]}")
     print(f"  values range: [{eff.values.min():.3f}, {eff.values.max():.3f}]")
     print(f"  spread available: {eff.spread_min is not None}")

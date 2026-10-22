@@ -14,6 +14,8 @@ def selected_tree(tmp_path):
     with uproot.recreate(path) as f:
         f.mktree(
             "tree",
+            {"x": "float64", "y": "float64", "vector": "var * float64"},
+        ).extend(
             {
                 "x": np.array([0.1, 1.1, 2.1, 3.1]),
                 "y": np.array([10.0, 20.0, 30.0, 40.0]),

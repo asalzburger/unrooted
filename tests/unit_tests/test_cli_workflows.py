@@ -13,12 +13,6 @@ import uproot
 from unrooted.cli.main import main
 
 
-@pytest.fixture(autouse=True)
-def close_figures():
-    yield
-    plt.close("all")
-
-
 @pytest.fixture
 def inputs(tmp_path):
     paths = [tmp_path / "sample_a.root", tmp_path / "sample_b.root"]

@@ -7,9 +7,10 @@ name = "unrooted"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
-    "numpy",
-    "uproot",
-    "matplotlib",
+    "numpy>=2.0",
+    "uproot>=5.6.0",
+    "awkward>=2.8.0",
+    "matplotlib>=3.8.4",
     "boost-histogram>=1.7.2",
 ]
 
@@ -22,20 +23,8 @@ Repository = "https://github.com/asalzburger/unrooted"
 Documentation = "https://asalzburger.github.io/unrooted"
 
 [project.optional-dependencies]
-dev = [
-    "pytest",
-    "ruff",
-    "pyright",
-    "plotly>=5.0",
-]
-docs = [
-    "mkdocs-material>=9.5",
-    "mkdocstrings[python]>=0.25",
-    "pillow",
-    "plotly>=5.0",
-]
 plotly = [
-    "plotly>=5.0",
+    "plotly>=5.24.1",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -49,9 +38,24 @@ select = ["E", "F", "I"]
 
 [tool.pyright]
 pythonVersion = "3.11"
+include = ["unrooted"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit_tests"]
+filterwarnings = [
+    "error:More than 20 figures have been opened:RuntimeWarning",
+]
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
     "ruff>=0.15.15",
+    "pyright>=1.1.400",
+    "hatchling>=1.27",
+]
+docs = [
+    "mkdocs>=1.6,<2",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+    {include-group = "dev"},
 ]

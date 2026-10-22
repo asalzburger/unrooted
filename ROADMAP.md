@@ -27,9 +27,9 @@ incompatible-bin ratios, invalid efficiency inputs, and CLI inconsistencies.
 | 2 | Profile calculations agree with numerical references | Complete |
 | 3 | Data and statistical contracts are explicit and enforced | Complete |
 | 4 | CLI and plotting backends honor their public contracts | Complete |
-| 5 | Data loading has a tested resource envelope | Complete locally |
-| 6 | CI and contributor setup reproduce supported configurations | Next |
-| 7 | A release candidate passes installation and documentation rehearsal | Planned |
+| 5 | Data loading has a tested resource envelope | Complete |
+| 6 | CI and contributor setup reproduce supported configurations | Complete locally |
+| 7 | A release candidate passes installation and documentation rehearsal | Next |
 
 ## Stage 1 Installed distributions
 
@@ -228,21 +228,61 @@ export. These are results for the recorded reference configuration, not a
 universal guarantee. Raw reports, versions, source/input hashes, and before/
 after measurements are in `benchmarks/results/`; the loading guide explains
 how to reproduce them. Plotly static image export remains outside this check.
+The test and distribution CI jobs passed on
+[PR 30](https://github.com/asalzburger/unrooted/pull/30), which was merged.
 
 ## Stage 6 CI and contributor workflow
 
-- [ ] Consolidate development dependency definitions and adopt a committed
+- [x] Consolidate development dependency definitions and adopt a committed
   lockfile for reproducible contributor and CI environments.
-- [ ] Define supported dependency bounds and test the oldest and newest
+- [x] Define supported dependency bounds and test the oldest and newest
   supported Python versions, with Linux/macOS coverage.
-- [ ] Exercise the base installation separately from optional Plotly support;
+- [x] Exercise the base installation separately from optional Plotly support;
   retain installed-wheel testing.
-- [ ] Build documentation strictly on pull requests and execute the key
+- [x] Build documentation strictly on pull requests and execute the key
   README/getting-started examples.
-- [ ] Extend lint to tests and documentation hooks; fix the existing findings.
-- [ ] Close test figures, keep generated files in temporary directories, and
+- [x] Extend lint to tests and documentation hooks; fix the existing findings.
+- [x] Close test figures, keep generated files in temporary directories, and
   confirm checks leave the working tree clean.
-- [ ] Add contributor instructions and reconcile stale `CLAUDE.md` guidance.
+- [x] Add contributor instructions and reconcile stale `CLAUDE.md` guidance.
+
+**Behavior:** `dev` and `docs` dependency groups replace duplicated development
+extras; Plotly remains an optional runtime extra. A committed `uv.lock` and
+`uv sync --locked` select contributor/CI dependencies, including build tools.
+Explicit runtime floors are NumPy 2.0, Uproot 5.6.0, Awkward 2.8.0,
+Matplotlib 3.8.4, boost-histogram 1.7.2, and optional Plotly 5.24.1. NumPy 2
+also matches the checked-in boost fixture's pickle format. Generated ROOT
+fixtures use the explicit schema/extend API supported by the Uproot floor.
+No runtime upper bounds are introduced.
+
+CI covers CPython 3.11–3.15 on Linux and the 3.11/3.15 boundaries on macOS,
+separating base and Plotly environments. A dedicated Python 3.11 job tests
+the lowest allowed direct runtime/Plotly versions, with locked test tools
+and resolver-selected transitive dependencies. Distribution checks build a
+wheel from the sdist with locked build tools and exercise base/Plotly wheel
+installations on Python 3.11 and 3.15. A PR quality job lints all Python
+sources, type-checks the package, executes introductory examples, and builds
+the docs strictly. Each CI job requires a clean working tree after checks.
+
+Shared test cleanup closes all Matplotlib figures and restores plotting
+settings; the open-figure resource warning is an error. Documentation gallery
+outputs now live in temporary storage and are registered as generated MkDocs
+files. README and Getting Started Python blocks are executed directly with
+synthetic ROOT/boost inputs, temporary outputs, and browser display
+intercepted; their loading, plotting, and export run normally. The contributor
+guide documents the matrix, dependency updates, local checks, and wheel
+rehearsal. `CLAUDE.md` uses that workflow and the current public APIs; the
+shadowing Pyright JSON config was consolidated into `pyproject.toml`.
+
+**Local verification on October 22, 2026:** all 684 unit tests passed with
+locked Plotly environments on Python 3.11.15 and 3.15.1 and with the declared
+minimum dependency stack on Python 3.11.15. The base Python 3.11 environment,
+without Plotly, passed 594 tests with 43 optional skips. Upstream Matplotlib
+deprecations remain visible in the minimum-stack run. All-source Ruff,
+package Pyright, strict MkDocs, workflow YAML parsing, and whitespace checks
+passed. The documentation smoke check executed 12 Python blocks and two CLI
+examples successfully. A wheel built from the sdist passed runtime-only and
+Plotly-enabled smoke checks outside the checkout on Python 3.11 and 3.15.
 
 **Completion:** one documented local workflow reproduces the required checks,
 and CI covers the declared support matrix, installed artifacts, and key

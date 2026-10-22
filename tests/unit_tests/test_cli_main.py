@@ -3,24 +3,19 @@
 These tests exercise the parser and style builder in isolation — no ROOT files
 are loaded, no matplotlib figures are rendered.
 """
+
 from __future__ import annotations
 
-import dataclasses
-import sys
-from pathlib import Path
-from unittest.mock import patch
-
-import numpy as np
 import pytest
 
 from unrooted.cli._draw_spec import parse_draw_spec
 from unrooted.cli.main import _build_style, _parse_add_tokens, build_parser
 from unrooted.plot.style import HistogramStyle
 
-
 # ---------------------------------------------------------------------------
 # Parser smoke tests
 # ---------------------------------------------------------------------------
+
 
 def test_parser_minimal(tmp_path):
     dummy = tmp_path / "f.root"
@@ -43,9 +38,7 @@ def test_parser_multi_draw():
 
 def test_parser_repeated_draw():
     p = build_parser()
-    args = p.parse_args(
-        ["--input", "f.root", "--draw", "hist:h1", "--draw", "hist:h2"]
-    )
+    args = p.parse_args(["--input", "f.root", "--draw", "hist:h1", "--draw", "hist:h2"])
     flat = [s for g in args.draw_specs for s in g]
     assert flat == ["hist:h1", "hist:h2"]
 
@@ -70,7 +63,18 @@ def test_parser_add_colon_joined():
 def test_parser_xlim_ylim():
     p = build_parser()
     args = p.parse_args(
-        ["--input", "f.root", "--draw", "hist:h", "--xlim", "-5", "5", "--ylim", "0", "100"]
+        [
+            "--input",
+            "f.root",
+            "--draw",
+            "hist:h",
+            "--xlim",
+            "-5",
+            "5",
+            "--ylim",
+            "0",
+            "100",
+        ]
     )
     assert args.xlim == [-5.0, 5.0]
     assert args.ylim == [0.0, 100.0]
@@ -79,7 +83,17 @@ def test_parser_xlim_ylim():
 def test_parser_ratio_range():
     p = build_parser()
     args = p.parse_args(
-        ["--input", "f.root", "--draw", "hist:h", "--add", "ratio", "--ratio-range", "0.5", "1.5"]
+        [
+            "--input",
+            "f.root",
+            "--draw",
+            "hist:h",
+            "--add",
+            "ratio",
+            "--ratio-range",
+            "0.5",
+            "1.5",
+        ]
     )
     assert args.ratio_range == [0.5, 1.5]
 
@@ -87,13 +101,16 @@ def test_parser_ratio_range():
 def test_parser_backend_choices():
     p = build_parser()
     for backend in ("mpl", "plotly", "terminal"):
-        args = p.parse_args(["--input", "f.root", "--draw", "hist:h", "--backend", backend])
+        args = p.parse_args(
+            ["--input", "f.root", "--draw", "hist:h", "--backend", backend]
+        )
         assert args.backend == backend
 
 
 # ---------------------------------------------------------------------------
 # _parse_add_tokens
 # ---------------------------------------------------------------------------
+
 
 def test_add_tokens_ratio():
     assert "ratio" in _parse_add_tokens(["ratio"])
@@ -117,6 +134,7 @@ def test_add_tokens_unknown():
 # ---------------------------------------------------------------------------
 # _build_style
 # ---------------------------------------------------------------------------
+
 
 def test_build_style_hist_auto():
     spec = parse_draw_spec("hist:h")
@@ -175,6 +193,7 @@ def test_build_style_profile_preset():
 # --marker flag
 # ---------------------------------------------------------------------------
 
+
 def test_build_style_marker_override():
     spec = parse_draw_spec("hist:h")
     style = _build_style(spec, "#000", set(), "markers", marker="s")
@@ -223,6 +242,7 @@ def test_parser_marker_invalid(tmp_path):
 # --linestyle flag
 # ---------------------------------------------------------------------------
 
+
 def test_build_style_linestyle_override():
     spec = parse_draw_spec("hist:h")
     style = _build_style(spec, "#000", set(), "hist", linestyle="dashed")
@@ -262,8 +282,16 @@ def test_parser_linestyle_multiple(tmp_path):
     dummy.touch()
     p = build_parser()
     args = p.parse_args(
-        ["--input", str(dummy), "--draw", "hist:h",
-         "--linestyle", "solid", "dashed", "dotted"]
+        [
+            "--input",
+            str(dummy),
+            "--draw",
+            "hist:h",
+            "--linestyle",
+            "solid",
+            "dashed",
+            "dotted",
+        ]
     )
     assert args.linestyle == ["solid", "dashed", "dotted"]
 
@@ -280,10 +308,11 @@ def test_parser_linestyle_invalid(tmp_path):
 # Per-histogram cycling (tested via _build_style directly)
 # ---------------------------------------------------------------------------
 
+
 def test_build_style_no_marker_when_none():
     spec = parse_draw_spec("hist:h")
     style = _build_style(spec, "#000", set(), "markers", marker=None)
-    assert style.marker == "o"   # preset default unchanged
+    assert style.marker == "o"  # preset default unchanged
 
 
 def test_build_style_marker_and_linestyle_combined():

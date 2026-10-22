@@ -1,22 +1,31 @@
-"""MkDocs pre-build hook — generates example outputs into docs/assets/examples/.
+"""Generate example assets in temporary storage and add them to the built site.
 
-Matplotlib examples are saved as PNG; Plotly examples as self-contained HTML;
-terminal examples as plain .txt files (embedded via --8<-- snippets).
+Matplotlib examples are saved as PNG; Plotly examples as HTML using CDN scripts.
+Terminal examples are embedded into Markdown before page rendering.
 The build fails (raises RuntimeError) if any generation step errors out.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from mkdocs.structure.files import File
 
 _PROJECT_ROOT = Path(__file__).parent.parent
 _DATA = _PROJECT_ROOT / "tests" / "data" / "root" / "tests_input.root"
 _EFF_DATA = _PROJECT_ROOT / "tests" / "data" / "root" / "tests_efficiency.root"
 _BOOST_DATA = _PROJECT_ROOT / "tests" / "data" / "boost" / "test_input_boost.pkl"
-_OUT = Path(__file__).parent / "assets" / "examples"
+_TEMP: TemporaryDirectory | None = None
+_OUT = Path()
 
 
 def on_pre_build(config, **kwargs) -> None:  # noqa: ANN001
-    _OUT.mkdir(parents=True, exist_ok=True)
+    global _TEMP, _OUT
+    if _TEMP is not None:
+        _TEMP.cleanup()
+    _TEMP = TemporaryDirectory(prefix="unrooted-docs-")
+    _OUT = Path(_TEMP.name)
     errors: list[str] = []
     for name, fn in [
         ("matplotlib examples", _gen_mpl),
@@ -37,8 +46,42 @@ def on_pre_build(config, **kwargs) -> None:  # noqa: ANN001
         )
 
 
+def on_files(files, config, **kwargs):
+    # Ignore assets left behind by the former source-directory generator.
+    for file in list(files):
+        if file.src_uri.startswith("assets/examples/"):
+            files.remove(file)
+    for path in sorted(_OUT.iterdir()):
+        files.append(
+            File.generated(
+                config, f"assets/examples/{path.name}", abs_src_path=str(path)
+            )
+        )
+    return files
+
+
+def on_page_markdown(markdown, **kwargs):
+    for name in ("terminal_hx.txt", "terminal_overlay_ratio.txt"):
+        marker = f"{{{{ example:{name} }}}}"
+        # Retain the surrounding code block indentation used by tabbed content.
+        text = (_OUT / name).read_text(encoding="utf-8").rstrip()
+        markdown = markdown.replace(marker, text.replace("\n", "\n    "))
+    return markdown
+
+
+def on_post_build(**kwargs):
+    if _TEMP is not None:
+        _TEMP.cleanup()
+
+
+def on_build_error(**kwargs):
+    if _TEMP is not None:
+        _TEMP.cleanup()
+
+
 def _gen_mpl() -> None:
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -65,6 +108,7 @@ def _gen_mpl() -> None:
     main_ax, _ = overlay([hx, hy], labels=["hx", "hy"], styles=[sx, sy], ratio=True)
     main_ax.set_title("Overlay: hx (ref) vs hy")
     from matplotlib.figure import Figure as MplFigure  # noqa: PLC0415
+
     ratio_fig = main_ax.get_figure()
     assert isinstance(ratio_fig, MplFigure)
     ratio_fig.tight_layout()
@@ -135,6 +179,7 @@ def _gen_terminal() -> None:
 
 def _gen_profile() -> None:
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -163,6 +208,7 @@ def _gen_profile() -> None:
     )
     main_ax.set_title("TProfile overlay: profX vs profY")
     from matplotlib.figure import Figure as MplFigure  # noqa: PLC0415
+
     ratio_fig = main_ax.get_figure()
     assert isinstance(ratio_fig, MplFigure)
     ratio_fig.tight_layout()
@@ -172,6 +218,7 @@ def _gen_profile() -> None:
 
 def _gen_efficiency() -> None:
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -197,6 +244,7 @@ def _gen_efficiency() -> None:
 def _gen_style_presets() -> None:
     """Generate a panel showing all five named style presets side by side."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import numpy as np
@@ -255,6 +303,7 @@ def _gen_style_presets() -> None:
     )
     main_ax.set_title("Ratio panel inherits B's line style and color")
     from matplotlib.figure import Figure as MplFigure  # noqa: PLC0415
+
     ratio_fig = main_ax.get_figure()
     assert isinstance(ratio_fig, MplFigure)
     ratio_fig.tight_layout()
@@ -266,6 +315,7 @@ def _gen_boost() -> None:
     import pickle
 
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -291,7 +341,9 @@ def _gen_boost() -> None:
 
     # Efficiency
     eff_data = boost_data["trackeff_vs_eta"]
-    eff = load_efficiency(eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta")
+    eff = load_efficiency(
+        eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta"
+    )
     fig, ax = plt.subplots(figsize=(8, 5))
     plot(eff, ax=ax, style=HistogramStyle.as_efficiency().with_color(ss.colors[1]))
     ax.set_ylim(0, 1.1)

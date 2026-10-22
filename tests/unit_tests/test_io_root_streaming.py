@@ -19,16 +19,14 @@ def streams(tmp_path):
     x = np.r_[np.linspace(0, 4, 101), [-1, 5, 0, 1, 2, 3, 4]]
     y = 1e12 + rng.normal(size=len(x))
     with uproot.recreate(path) as f:
-        f.mktree("scalar", {"x": x, "y": y})
-        f.mktree(
-            "pairs",
+        f.mktree("scalar", {"x": "float64", "y": "float64"}).extend({"x": x, "y": y})
+        f.mktree("pairs", {"x": "float64", "y": "float64"}).extend(
             {
                 "x": np.arange(105, dtype=float),
                 "y": 10 * np.arange(105, dtype=float) + 1,
             },
         )
-        f.mktree(
-            "jagged",
+        f.mktree("jagged", {"x": "float64", "y": "var * float64"}).extend(
             {
                 "x": np.arange(5, dtype=float),
                 "y": ak.Array([[1.0, 2.0], [], [3.0], [4.0, 5.0, 6.0], [7.0]]),
@@ -177,7 +175,9 @@ def test_priority_ties_choose_earlier_input_indices():
 def test_sampling_cannot_hide_invalid_coordinates(tmp_path):
     path = tmp_path / "infinity.root"
     with uproot.recreate(path) as f:
-        f.mktree("tree", {"x": np.array([0.0, np.inf]), "y": np.array([1.0, 2.0])})
+        f.mktree("tree", {"x": "float64", "y": "float64"}).extend(
+            {"x": np.array([0.0, np.inf]), "y": np.array([1.0, 2.0])}
+        )
     with pytest.raises(ValueError, match="finite"):
         load_scatter(path, "tree", "x", "y", max_points=1, sampling="random", seed=7)
 
@@ -251,7 +251,9 @@ def test_nested_branch_pair_shapes_survive_event_chunk_boundaries(x_branch, y_br
 def test_chunked_profile_retains_missing_data_semantics(tmp_path):
     path = tmp_path / "missing.root"
     with uproot.recreate(path) as f:
-        f.mktree("tree", {"x": np.array([0.1, 0.2]), "y": np.array([1.0, np.nan])})
+        f.mktree("tree", {"x": "float64", "y": "float64"}).extend(
+            {"x": np.array([0.1, 0.2]), "y": np.array([1.0, np.nan])}
+        )
     profile = load_branch(path, "tree", "x", "y", n_bins=2, range=(0, 2), step_size=1)
     np.testing.assert_allclose(profile.values, [np.nan, 0])
     np.testing.assert_allclose(profile.variances, [np.nan, 0])

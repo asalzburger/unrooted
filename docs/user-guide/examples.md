@@ -34,7 +34,7 @@ the same plot functions.
 === "Terminal"
 
     ```
-    --8<-- "assets/examples/terminal_hx.txt"
+    {{ example:terminal_hx.txt }}
     ```
 
 ---
@@ -58,7 +58,7 @@ the same plot functions.
 === "Terminal"
 
     ```
-    --8<-- "assets/examples/terminal_overlay_ratio.txt"
+    {{ example:terminal_overlay_ratio.txt }}
     ```
 
 ---
