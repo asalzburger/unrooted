@@ -44,6 +44,15 @@ def load_branch(
 
     Incompatible branch shapes raise a ``ValueError`` from awkward-array.
 
+    Count and profile bins use the same convention: ``[left, right)``, except
+    the last bin includes its right edge. Values outside the range are omitted.
+
+    Profiles retain the population convention: for N entries, ``variances``
+    is ``sum((y - mean)**2) / N**2``. Empty bins have value and variance zero
+    and ``nan`` spread bounds; single-entry bins have variance zero and both
+    spread bounds equal to the observation. Empty trees require an explicit
+    *range* because the automatic range is derived from the data.
+
     Args:
         path:     Path to the ROOT file.
         key:      Tree name inside the file.
@@ -166,31 +175,33 @@ def _profile_histogram(
     x_valid = x_data[in_range]
     y_valid = y_data[in_range]
 
-    # searchsorted on inner edges → 0-based bin index; values equal to hi
-    # land in the last bin via clip.
-    idx = np.searchsorted(edges[1:], x_valid)
+    # Match np.histogram: internal edges belong to the bin on their right;
+    # the final right edge is included in the last bin.
+    idx = np.searchsorted(edges[1:], x_valid, side="right")
     idx = np.clip(idx, 0, n_bins - 1)
 
-    counts = np.zeros(n_bins, dtype=np.intp)
-    sums = np.zeros(n_bins)
-    sum_sq = np.zeros(n_bins)
-    np.add.at(counts, idx, 1)
-    np.add.at(sums, idx, y_valid)
-    np.add.at(sum_sq, idx, y_valid**2)
-
+    counts = np.bincount(idx, minlength=n_bins)
     mins = np.full(n_bins, np.inf)
     maxs = np.full(n_bins, -np.inf)
     np.minimum.at(mins, idx, y_valid)
     np.maximum.at(maxs, idx, y_valid)
 
     has_data = counts > 0
-    means = np.where(has_data, sums / np.where(has_data, counts, 1), 0.0)
-    pop_var = np.where(
-        has_data,
-        sum_sq / np.where(has_data, counts, 1) - means**2,
-        0.0,
+    safe_counts = np.where(has_data, counts, 1)
+
+    # Work relative to the minimum in each bin so a large common offset
+    # cannot swamp the mean or its squared deviations. A centered second
+    # pass avoids subtracting nearly equal raw second moments.
+    shifted = y_valid - mins[idx]
+    shifted_sums = np.bincount(idx, weights=shifted, minlength=n_bins)
+    shifted_means = shifted_sums / safe_counts
+    means = np.where(has_data, mins + shifted_means, 0.0)
+    deviations = shifted - shifted_means[idx]
+    sum_sq_deviations = np.bincount(
+        idx, weights=deviations**2, minlength=n_bins,
     )
-    var_means = np.where(has_data, pop_var / np.where(has_data, counts, 1), 0.0)
+    # Preserve the population convention: Var(mean) = sum((y - mean)^2) / N^2.
+    var_means = sum_sq_deviations / safe_counts / safe_counts
     mins = np.where(has_data, mins, np.nan)
     maxs = np.where(has_data, maxs, np.nan)
 
