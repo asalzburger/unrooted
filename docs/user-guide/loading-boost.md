@@ -11,8 +11,9 @@ This is the recommended path when your analysis pipeline already produces
 
 ## Profile histograms (Mean storage)
 
-A `boost_histogram.Histogram` with `Mean` storage is treated as a profile
-histogram, exactly like a ROOT `TProfile`.
+A `boost_histogram.Histogram` with `Mean` storage is converted to the common
+profile representation. Its sample-corrected uncertainties and spread are
+described below.
 
 ```python
 import pickle
@@ -44,6 +45,15 @@ quantities from them:
 
 σ_y = √(Σ(x−mean)² / (N−1)).  Bins with count = 0 carry `nan` for the spread
 fields; bins with count = 1 carry σ_y = 0.
+
+The SE² formula applies for `N >= 2`. This reader retains variance `0` for
+bins with zero or one observation; empty bins have value `0`.
+
+Unlike [profiles computed from branches](loading-root.md#profile-histogram-two-branches),
+which retain population SE² = Σ(x−mean)² / N², `Mean` storage uses the sample
+correction. For observations `[1, 3]`, both readers return mean `2`, but the
+branch variance is `0.5` and the boost variance is `1`. Branch spread records
+observed extrema; boost spread is mean ± sample standard deviation.
 
 Axis `metadata` strings (e.g. `bh.axis.Variable([...], metadata="#eta")`)
 become axis labels automatically.

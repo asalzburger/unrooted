@@ -29,10 +29,10 @@ class Histogram:
         title:      Optional longer title.
         overflow:   Full values array *with* flow bins included, as returned
                     by uproot.  ``None`` if not loaded.
-        spread_min: Per-bin minimum of the profiled quantity.  Set only for
-                    profile histograms; ``None`` otherwise.
-        spread_max: Per-bin maximum of the profiled quantity.  Set only for
-                    profile histograms; ``None`` otherwise.
+        spread_min: Optional lower spread bound. Branch profiles use the
+                    observed minimum; loaded profiles use mean minus standard
+                    deviation; efficiency readers use an interval bound.
+        spread_max: Optional upper spread bound, paired with ``spread_min``.
     """
 
     axes: list[Axis]

@@ -129,6 +129,10 @@ h = load_branch("data.root", "tree", "x",
                 label="x [mm]")
 ```
 
+Count and profile histograms use bins `[left, right)`, with the final right
+edge included in the last bin. A value exactly on an internal edge belongs to
+the bin on its right. Values outside the specified range are omitted.
+
 ### Profile histogram (two branches)
 
 Provide `y_branch` to profile `y` values against `x`-axis bins.
@@ -142,6 +146,37 @@ hp = load_branch("data.root", "tree", "x", "y")
 # hp.spread_min → per-bin minimum of y
 # hp.spread_max → per-bin maximum of y
 ```
+
+For a bin with `N > 0` observations, define
+`M2 = sum((y - mean(y))**2)`. Branch profiles use the **population convention**:
+
+```text
+values    = mean(y)
+variances = M2 / N²
+errors    = sqrt(variances)
+```
+
+This is the population variance of the observations divided by `N`; it does
+not apply the sample correction `N / (N - 1)`. For observations `[1, 3]`, the
+mean is `2`, the variance of the mean is `0.5`, and the spread bounds are
+`[1, 3]`. The calculation centers values within each bin before accumulating
+squared deviations, avoiding cancellation from a large common offset.
+
+| Entries in a bin | Value | Variance | Spread bounds |
+| --- | --- | --- | --- |
+| 0 | `0` | `0` | both `nan` |
+| 1 | observed value | `0` | both equal to the observation |
+| 2 or more | mean | `M2 / N²` | observed minimum and maximum |
+
+The zero variance for a single observation preserves the existing convention;
+it does not establish that the underlying distribution has no uncertainty.
+An entirely empty tree can be loaded with an explicit `range=(lo, hi)`;
+automatic range detection needs at least one x-value.
+
+The [boost-histogram Mean reader](loading-boost.md#profile-histograms-mean-storage)
+retains its sample-corrected variance `M2 / (N * (N - 1))` for `N >= 2` and
+mean ± standard deviation spread. Those uncertainty and spread definitions
+differ from branch profiles even when the means and binning agree.
 
 ### Supported branch-pair types
 

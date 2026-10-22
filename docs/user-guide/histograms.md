@@ -33,8 +33,8 @@ h = Histogram(
 | `name` | `str` | Optional identifier |
 | `title` | `str` | Optional longer title |
 | `overflow` | `ndarray \| None` | Values with flow bins |
-| `spread_min` | `ndarray \| None` | Per-bin min (profile only) |
-| `spread_max` | `ndarray \| None` | Per-bin max (profile only) |
+| `spread_min` | `ndarray \| None` | Optional lower spread bound; meaning depends on the reader |
+| `spread_max` | `ndarray \| None` | Optional upper spread bound; meaning depends on the reader |
 
 ### Profile histograms
 
@@ -42,7 +42,26 @@ When `load_branch()` returns a profile histogram, `spread_min` and
 `spread_max` hold the per-bin extreme values of the profiled quantity.
 Empty bins have `np.nan` in both spread arrays.
 
+For `N > 0` observations, branch-profile `variances` use
+`sum((y - mean(y))**2) / N²`, retaining the population convention. Empty bins
+have value and variance `0`; single-entry bins have the observed value and
+variance `0`. The spread bounds distinguish an empty bin from a populated
+bin whose values and variance happen to be zero.
+
+Profiles loaded from ROOT `TProfile` or boost-histogram `Mean` storage instead
+carry mean ± standard deviation in these fields. Efficiency readers use them
+for interval bounds. These bands have different interpretations; consult the
+[ROOT](loading-root.md) and [boost-histogram](loading-boost.md) loading guides
+when comparing them.
+
+Boost `Mean` profiles retain sample-corrected variance
+`sum((y - mean(y))**2) / (N * (N - 1))` for `N >= 2`. Matching profile means
+therefore do not imply matching error bars. ROOT `TProfile` variances are
+read through uproot.
+
 ```python
+from unrooted.io.root import load_branch
+
 hp = load_branch("data.root", "tree", "x", "y")
 
 import numpy as np

@@ -23,9 +23,9 @@ incompatible-bin ratios, invalid efficiency inputs, and CLI inconsistencies.
 
 | Stage | Outcome | Status |
 | --- | --- | --- |
-| 1 | Installed distributions work outside the checkout | Complete locally |
-| 2 | Profile calculations agree with numerical references | Next |
-| 3 | Data and statistical contracts are explicit and enforced | Planned |
+| 1 | Installed distributions work outside the checkout | Complete |
+| 2 | Profile calculations agree with numerical references | Complete locally |
+| 3 | Data and statistical contracts are explicit and enforced | Next |
 | 4 | CLI and plotting backends honor their public contracts | Planned |
 | 5 | Data loading has a tested resource envelope | Planned |
 | 6 | CI and contributor setup reproduce supported configurations | Planned |
@@ -55,28 +55,40 @@ installations with only runtime dependencies passed the packaging smoke check
 on macOS with Python 3.11.15 and 3.14.6. The README Python example passed
 against the installed wheel. All 370 unit tests, package/changed-test lint,
 package type checking, and a strict documentation build passed. The new
-distribution job is configured in CI; its hosted result is pending a push.
+distribution and test CI jobs passed on
+[PR 26](https://github.com/asalzburger/unrooted/pull/26), which was merged.
 
 ## Stage 2 Profile calculations
 
-- [ ] Align profile bin boundaries with the count-histogram convention,
+- [x] Align profile bin boundaries with the count-histogram convention,
   including the final right edge.
-- [ ] Replace subtraction of large second moments with a stable variance
+- [x] Replace subtraction of large second moments with a stable variance
   calculation.
-- [ ] Add reference calculations for boundary values, large offsets with small
+- [x] Add reference calculations for boundary values, large offsets with small
   spread, empty bins, and bins with one observation.
-- [ ] Compare equivalent branch and boost-histogram profiles and account for
+- [x] Compare equivalent branch and boost-histogram profiles and account for
   any intended estimator differences.
-- [ ] Document the chosen variance estimator, standard error, and empty-bin
+- [x] Document the chosen variance estimator, standard error, and empty-bin
   behavior in the histogram and loading guides.
 
-**Decision together:** choose the population/sample variance convention and
-the treatment of bins with fewer than two observations. Record the rationale
-and any compatibility change.
+**Decision:** retain branch profiles' population variance convention and the
+existing sparse-bin behavior: empty bins have value and variance zero with
+NaN spread, and single-entry bins have the observed value, zero variance, and
+equal spread bounds. This preserves uncertainty semantics while fixing bin
+membership and numerical stability. Boost Mean conversion retains its sample
+correction; the difference is documented and tested.
 
 **Completion:** the reproduced boundary and cancellation failures have
 regression tests, and profile values and uncertainties agree with the chosen
 reference calculations within stated tolerances.
+
+**Verification on October 22, 2026:** all 385 unit tests passed on Python
+3.11.15 and 3.14.6, including 15 new profile calculation cases. The 80-digit
+Decimal reference comparison uses variance relative tolerance `1e-12` and
+mean absolute tolerance of one float64 spacing at `1e12`. A wheel built from
+the sdist passed the runtime-only packaging smoke check and direct profile
+regressions outside the checkout on Python 3.11. Package/changed-test Ruff,
+package Pyright, strict documentation build, and `git diff --check` passed.
 
 ## Stage 3 Data and statistical contracts
 
