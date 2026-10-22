@@ -73,7 +73,7 @@ plot(prof, style=HistogramStyle.as_profile().with_color(ss.colors[0]))
 
 ## Efficiency histograms
 
-Pass a pair of `Double`-storage histograms (accepted, total) to
+Pass a pair of count-storage histograms (accepted, total) to
 `load_efficiency()`.  This mirrors the ROOT `load_efficiency()` API, but
 accepts in-memory objects rather than file paths.
 
@@ -89,11 +89,26 @@ eff = load_efficiency(eff_entry["accepted"], eff_entry["total"], name="trackeff"
 |-----------|---------|
 | `eff.values` | Per-bin efficiency = accepted / total |
 | `eff.variances` | Binomial variance = eff × (1 − eff) / total |
-| `eff.spread_min` | eff − σ, clamped to 0 |
-| `eff.spread_max` | eff + σ, clamped to 1 |
+| `eff.spread_min` | Lower Wilson interval bound |
+| `eff.spread_max` | Upper Wilson interval bound |
 
-Bins where total = 0 carry `nan`.  The function validates that both histograms
-have the same shape and matching bin edges, raising `ValueError` otherwise.
+Both inputs must be 1D, with exactly identical edges and finite nonnegative
+integer counts satisfying accepted ≤ total. Supported count storages are
+`Double`, `Int64`, `Unlimited`, and `AtomicInt64`. `Weight`, `Mean`, and
+`WeightedMean` are rejected, including `Weight` filled with unit weights.
+Scalar inputs whose boost variance information is unknown after a weighted
+fill are also rejected. Manually assigned scalar contents cannot establish
+the history of weights; callers must supply unweighted counts. Fractional or
+weighted efficiencies are unsupported.
+
+Bounds use the Wilson score interval without continuity correction, with
+`confidence_level=0.6826894921370859` (68.27%) by default; pass
+`confidence_level=0.95` for 95% intervals. This replaces the previous clamped
+Gaussian spread and retains `p*(1-p)/N` in `variances`. Zero-total bins carry
+NaN in all four arrays; flow bins are excluded. Invalid inputs or confidence
+levels outside `(0, 1)` raise `ValueError`. The [ROOT efficiency guide](loading-root.md#efficiency-histograms)
+gives the formula, endpoint examples, and the difference between Wilson
+bounds and `errors`.
 
 ```python
 from unrooted.plot.mpl import plot
@@ -108,8 +123,10 @@ plot(eff, style=HistogramStyle.as_efficiency().with_color(ss.colors[1]))
 
 ## Scalar and Weight storage
 
-`load()` handles all scalar storage types (`Double`, `Int64`) and `Weight`
-storage in addition to `Mean`:
+`load()` supports the scalar storages `Double`, `Int64`, `Unlimited`, and
+`AtomicInt64`, plus `Weight` and `Mean`. `WeightedMean` is explicitly
+unsupported; its weighted profile uncertainty is not yet defined here.
+Other storage types raise `ValueError`.
 
 === "Double / Int64 (count histogram)"
 
@@ -137,15 +154,21 @@ storage in addition to `Mean`:
 
 | Storage type | `h.values` | `h.variances` | `spread_min/max` |
 |---|---|---|---|
-| `Double` / `Int64` | bin count | = values (Poisson) | `None` |
+| `Double` / `Int64` / `Unlimited` / `AtomicInt64` | bin count | = values (Poisson) | `None` |
 | `Weight` | Σw per bin | Σw² per bin | `None` |
 | `Mean` | per-bin mean | SE² per bin | mean ± σ_y |
 
 ---
 
-## Variable and Regular axes
+## Numeric axes
 
-Both axis types are supported; edges are extracted via the `.edges` property:
+`Regular`, `Variable`, and `Integer` axes are supported; edges are extracted
+via the `.edges` property. Categorical (`IntCategory`, `StrCategory`) and
+`Boolean` axes raise `ValueError` because the core representation does not
+preserve their category semantics. Numeric axes must yield finite, strictly
+increasing edges. Transformed, growing, and circular numeric axes are stored
+as a static snapshot of their current edges and contents; later growth or
+wrapping behavior belongs to the original boost histogram.
 
 ```python
 # Variable bin widths
@@ -157,6 +180,10 @@ ax = bh.axis.Regular(40, -4, 4, metadata="η")
 
 The `metadata` field of each axis becomes the `Axis.label` string in the
 returned `Histogram`.
+
+All returned arrays are independent snapshots. `overflow` always includes
+both flow slots per axis; disabled flow slots are padded with NaN. See the
+[core data contract](histograms.md#flow-bins) for shape and mutation semantics.
 
 ---
 

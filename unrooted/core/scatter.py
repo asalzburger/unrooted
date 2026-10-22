@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from unrooted.core._validation import real_array
+
 
 @dataclass
 class ScatterData:
@@ -30,6 +32,14 @@ class ScatterData:
     title: str = ""
 
     def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self) -> None:
+        """Require flat, equally sized real arrays; NaNs are retained as gaps."""
+        self.x = real_array(self.x, "ScatterData.x")
+        self.y = real_array(self.y, "ScatterData.y")
+        if self.x.ndim != 1 or self.y.ndim != 1:
+            raise ValueError("ScatterData x and y must be 1D arrays")
         if len(self.x) != len(self.y):
             raise ValueError(
                 f"ScatterData x and y must have the same length, "

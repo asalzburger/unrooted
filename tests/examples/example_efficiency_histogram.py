@@ -26,12 +26,13 @@ def main() -> None:
     print(f"  values range: [{eff.values.min():.3f}, {eff.values.max():.3f}]")
     print(f"  spread available: {eff.spread_min is not None}")
 
-    # as_efficiency() preset: markers + error bars + spread band
+    # Markers and Wilson bounds; omit the separate Gaussian standard error.
     fig, ax = plt.subplots(figsize=(8, 5))
-    plot(eff, ax=ax, style=HistogramStyle.as_efficiency().with_color(ss.colors[0]))
+    style = HistogramStyle.as_efficiency(error_display=None).with_color(ss.colors[0])
+    plot(eff, ax=ax, style=style)
     ax.set_ylim(0, 1.1)
     ax.axhline(1.0, color="gray", linestyle=":", linewidth=0.8)
-    ax.set_title("Efficiency: passed / total with ±σ Gaussian CI")
+    ax.set_title("Efficiency: passed / total with 68.27% Wilson interval")
     fig.tight_layout()
     plt.show()
 

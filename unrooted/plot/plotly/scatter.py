@@ -24,6 +24,7 @@ def plot(
     Returns:
         A :class:`plotly.graph_objects.Figure`.
     """
+    scatter.validate()
     eff_style = style if style is not None else HistogramStyle.as_scatter()
     color: str | tuple[float, ...] = (
         eff_style.marker_color

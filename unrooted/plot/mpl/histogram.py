@@ -21,6 +21,7 @@ def plot(
     style: HistogramStyle | None = None,
     **kwargs,
 ) -> MplAxes:
+    hist.validate()
     if ax is None:
         _, ax = plt.subplots()
     if hist.ndim == 1:

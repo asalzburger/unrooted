@@ -53,6 +53,7 @@ def plot(
     Returns:
         A :class:`plotly.graph_objects.Figure`.
     """
+    hist.validate()
     fig = go.Figure()
     if hist.ndim == 1:
         eff_style = style if style is not None else HistogramStyle()
