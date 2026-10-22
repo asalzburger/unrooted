@@ -8,7 +8,6 @@ import numpy as np
 from matplotlib.axes import Axes as MplAxes
 
 from unrooted.core.histogram import Histogram
-from unrooted.plot.mpl._range import _draw_range
 from unrooted.plot.mpl.histogram import _plot_1d_styled
 from unrooted.plot.style import HistogramStyle
 
@@ -88,46 +87,29 @@ def _draw_ratio_panel(
 ) -> None:
     ref_values = np.asarray(hists[0].values, dtype=float)
     ref_errors = hists[0].errors
-    edges = hists[0].axes[0].edges
-    centers = hists[0].axes[0].centers
 
     for i, hist in enumerate(hists[1:], start=1):
         style = styles[i]
         assert style.line_color is not None  # guaranteed by overlay()
-        line_color: str | tuple[float, ...] = style.line_color
         with np.errstate(invalid="ignore", divide="ignore"):
             r = np.where(ref_values != 0, hist.values / ref_values, np.nan)
-            sigma_r = np.where(
-                ref_values != 0,
-                np.sqrt(
-                    (hist.errors / ref_values) ** 2
-                    + (hist.values * ref_errors / ref_values**2) ** 2
-                ),
-                np.nan,
-            )
-        ax_ratio.stairs(
-            r,
-            edges,
-            color=line_color,
-            linestyle=style.line_style or "-",
-            linewidth=style.line_width,
+            sigma_r = np.zeros_like(r)
+            if style.error_display is not None:
+                sigma_r = np.where(
+                    ref_values != 0,
+                    np.sqrt(
+                        (hist.errors / ref_values) ** 2
+                        + (hist.values * ref_errors / ref_values**2) ** 2
+                    ),
+                    np.nan,
+                )
+        ratio_hist = Histogram(
+            axes=[hists[0].axes[0]],
+            values=r,
+            variances=sigma_r**2,
         )
-        if style.error_display is not None:
-            error_color = (
-                style.error_color if style.error_color is not None else line_color
-            )
-            _draw_range(
-                ax_ratio,
-                centers=centers,
-                values=r,
-                lo=r - sigma_r,
-                hi=r + sigma_r,
-                edges=edges,
-                mode=style.error_display,
-                color=error_color,
-                alpha=style.error_alpha,
-                capsize=style.error_capsize,
-            )
+        ratio_style = dataclasses.replace(style, fill_alpha=None, spread_display=None)
+        _plot_1d_styled(ratio_hist, ax_ratio, ratio_style, set_axis_labels=False)
 
     ax_ratio.axhline(1.0, color="black", linestyle="--", linewidth=0.8)
     ax_ratio.set_ylabel("Ratio")

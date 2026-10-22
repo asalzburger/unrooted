@@ -26,15 +26,23 @@ _MARKER_SYMBOL: dict[str, str] = {
 
 # Plotly default qualitative color sequence.
 DEFAULT_COLORS: list[str] = [
-    "#636EFA", "#EF553B", "#00CC96", "#AB63FA",
-    "#FFA15A", "#19D3F3", "#FF6692", "#B6E880",
-    "#FF97FF", "#FECB52",
+    "#636EFA",
+    "#EF553B",
+    "#00CC96",
+    "#AB63FA",
+    "#FFA15A",
+    "#19D3F3",
+    "#FF6692",
+    "#B6E880",
+    "#FF97FF",
+    "#FECB52",
 ]
 
 
 def plot(
     hist: Histogram,
     style: HistogramStyle | None = None,
+    label: str | None = None,
 ) -> go.Figure:
     """Plot a histogram as an interactive Plotly figure.
 
@@ -49,6 +57,7 @@ def plot(
         hist:  Histogram to plot.
         style: Visual style.  A default :class:`~unrooted.plot.style.HistogramStyle`
                is used when ``None``.
+        label: Legend label for a 1D histogram; defaults to its name.
 
     Returns:
         A :class:`plotly.graph_objects.Figure`.
@@ -62,7 +71,13 @@ def plot(
             if eff_style.line_color is not None
             else DEFAULT_COLORS[0]
         )
-        _add_1d_traces(fig, hist, eff_style, color, label=hist.name or None)
+        _add_1d_traces(
+            fig,
+            hist,
+            eff_style,
+            color,
+            label=label if label is not None else hist.name or None,
+        )
         if hist.axes[0].label:
             fig.update_xaxes(title_text=hist.axes[0].label)
         if hist.title:

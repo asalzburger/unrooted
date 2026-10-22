@@ -181,6 +181,8 @@ unrooted --input f.root --source MyDir --draw hist:h1 hist:h2
 ```
 
 `--source` is **not** prepended to the tree name in `branch:` specs.
+Use an explicit path such as `branch:MyDir/tree:scatter:x:y` for a nested
+tree. Leading and trailing slashes on the source prefix are normalized.
 
 ---
 
@@ -192,6 +194,12 @@ unrooted --input f.root --source MyDir --draw hist:h1 hist:h2
 | N | 1 | load the same key from every file; label = filename stem |
 | N | N | zip: `(file_i, draw_i)` |
 | N | M ≠ N, M > 1 | error |
+
+For one file or zipped files/specs, labels use the final draw key component
+(the passed key for efficiencies, the x branch for counts, or the y branch
+for profiles/scatter). For multiple files and one spec, filename stems take
+priority over the loaded histogram name. `--label` overrides these defaults
+and must supply exactly one label per dataset, including single-dataset plots.
 
 ---
 
@@ -208,7 +216,7 @@ space-separated, colon-joined, or spread across multiple `--add` flags:
 
 | Token | Effect |
 |-------|--------|
-| `ratio` | ratio panel below main plot (mpl / plotly) |
+| `ratio` | ratio panel below main plot (all histogram backends; at least two 1D histograms) |
 | `error_bar` | error display mode → bar caps at bin centres |
 | `error_band` | error display mode → step-shaped filled band |
 | `error_continuous` | error display mode → smooth filled band |
@@ -217,6 +225,13 @@ space-separated, colon-joined, or spread across multiple `--add` flags:
 | `spread_band` | spread display mode → step-shaped filled band |
 | `spread_continuous` | spread display mode → smooth filled band |
 | `spread_none` | suppress spread display |
+
+Choose at most one `error_*` mode and one `spread_*` mode. Conflicting modes
+raise an argument error; order does not select a winner. Ratios require
+exactly matching edges. Matplotlib and Plotly ratios inherit the numerator's
+line, marker, and error settings; spread and main-panel fill are not propagated
+to ratios. `--add error_none` suppresses ratio errors as well as main errors.
+Scatter plots have no ratio, error, or spread display.
 
 ---
 
@@ -254,6 +269,32 @@ Colors cycle automatically across multiple histograms.
 | `plotly` | interactive HTML/image | `.html` for interactive; install the optional Plotly backend as described in Getting Started |
 | `terminal` | unicode to stdout | no output file; `--max-lines N` controls height |
 
+| Capability / option | Matplotlib | Plotly | Terminal |
+| --- | --- | --- | --- |
+| Single 1D histogram / overlay / ratio | Yes | Yes | Yes, up to 4 datasets and 100 bins |
+| Single 2D heatmap | Yes | Yes | Unsupported |
+| Scatter / scatter overlay | Yes | Yes | Unsupported |
+| Error and spread display | Yes | Yes | Omitted; explicit display requests rejected |
+| Title, x label, legend labels | Yes | Yes | Yes |
+| Y label and axis limits | Yes | Yes | Unsupported |
+| Style, palette, marker, line overrides | Yes | Yes | Unsupported |
+| Fixed ratio y range | Yes | Yes | Unsupported |
+| `--output` / `--show` | Yes | Yes | Unsupported; writes to stdout |
+| `--max-lines` | Unsupported | Unsupported | Integer ≥ 5 |
+
+Single 2D heatmaps accept title, axis labels, and limits, but do not accept
+`--label`, `--add`, or 1D style overrides. Scatter supports `--style scatter`
+and marker overrides; line styles and histogram style presets are rejected.
+`--n-bins` and `--branch-range` require a count/profile branch spec. Ranges
+must be finite with `MIN < MAX`, and `--n-bins` must be positive. Unsupported
+combinations raise an error instead of silently discarding flags.
+
+Plotly HTML output is self-contained and needs only the Plotly extra. Static
+images additionally need Kaleido; Kaleido 1+ requires a compatible installed
+Chrome or Chromium. See [Plotly's export setup](https://plotly.com/python/static-image-export/).
+These optional tools are not installed by `unrooted[plotly]`. Export failures
+identify the destination and suggest HTML when the static export setup fails.
+
 ---
 
 ## Output and display
@@ -263,6 +304,27 @@ Colors cycle automatically across multiple histograms.
 | `--output FILE` | save figure to file |
 | `--show` | open interactive window even when `--output` is given |
 | *(neither)* | open interactive window (equivalent to `--show`) |
+
+These display rules apply to graphical backends. Terminal output always goes
+to stdout; redirect it with your shell to save a text preview.
+
+With ratios, `--xlabel` applies to the bottom axis and `--ylabel` / `--ylim`
+apply to the main panel. `--ratio-range` controls only the ratio y-axis and
+requires `--add ratio`. `--xlim` applies to the shared x range.
+
+## Errors and exit codes
+
+| Exit code | Meaning |
+| --- | --- |
+| `0` | Successful rendering/export, or `--help` |
+| `2` | Invalid syntax, conflicting flags, or an unsupported option combination |
+| `1` | Loading, plotting, optional dependency, display, or export failure |
+
+Errors go to stderr with an `unrooted:` prefix and no traceback. Missing
+files/keys and unsupported ROOT objects are loading errors. For example,
+`th2:` with a 1D object or `prof:` with a plain count histogram fails clearly.
+Invalid file/spec combinations and label counts are argument errors. Long
+options must be spelled in full; the CLI does not accept abbreviations.
 
 ---
 

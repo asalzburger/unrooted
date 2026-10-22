@@ -93,11 +93,12 @@ efficiency reader for the supported binomial case. Zero reference bins are
 shown as NaN gaps. For `A=10`, `B=5`, and Poisson variances, the ratio is `0.5`
 and its propagated variance is `0.075`.
 
-The ratio panel inherits the **style of B**: line color, line style, line width,
-error display mode, and error color all come from the corresponding
-`HistogramStyle`.  Set `error_display=None` to suppress error bars in the ratio
-panel, or use `LineStyle.DASHED` to visually distinguish the ratio line from the
-reference:
+Both graphical backends inherit the **style of B** in the ratio panel: line
+color, opacity, style, width, marker settings, and error display settings come
+from the numerator's `HistogramStyle`. `line_style=None` hides its ratio line;
+`error_display=None` hides its ratio errors. Error bars, step bands, and
+continuous bands follow the selected mode. Main-panel fill and spread bounds
+are omitted from ratios. Use `LineStyle.DASHED` to distinguish a ratio line:
 
 ```python
 from unrooted.plot.style import HistogramStyle, LineStyle
@@ -126,8 +127,8 @@ overlay([h1, h2], ax=ax, labels=["h1", "h2"])
 ### Scatter plots
 
 ```python
-from unrooted.plot.mpl.scatter import plot as scatter_plot
-from unrooted.core.scatter import ScatterData
+from unrooted.plot.mpl import plot_scatter as scatter_plot
+from unrooted.core import ScatterData
 
 sd = ScatterData(x=x_arr, y=y_arr, x_label="η", y_label="pT [GeV]")
 ax = scatter_plot(sd)
@@ -143,6 +144,17 @@ style = HistogramStyle.as_scatter(marker="o", marker_size=3.0)
 ax = scatter_plot(sd, style=style, label="track candidates")
 ax.legend()
 ```
+
+Or use the public overlay helper, which cycles colors and uses the first
+dataset's labels and title:
+
+```python
+from unrooted.plot.mpl import overlay_scatter
+
+ax = overlay_scatter([sd1, sd2], labels=["A", "B"])
+```
+
+Read point clouds through `from unrooted.io.root import load_scatter`.
 
 To overlay multiple scatter datasets on the same axes, pass an existing `ax`:
 
@@ -199,8 +211,18 @@ out of the box.
 ```python
 fig = plot(h)
 fig.show()                        # interactive browser window
-fig.write_image("hx.png")        # static export (requires kaleido)
+fig.write_html("hx.html")        # self-contained interactive output
+fig.write_image("hx.png")        # optional static export setup, below
 ```
+
+Use `plot(h, label="Dataset A")` to override the single histogram's legend
+label; its name is the default. A 2D heatmap uses the axis labels and title,
+and does not use the 1D style settings.
+
+Static export additionally requires Kaleido. Kaleido 1+ looks for an installed
+Chrome/Chromium browser; neither is included in the Plotly extra. Follow
+[Plotly's static export instructions](https://plotly.com/python/static-image-export/)
+to configure those optional tools. HTML export does not need them.
 
 Styled:
 
@@ -240,8 +262,8 @@ fig.show()
 ### Scatter plots
 
 ```python
-from unrooted.plot.plotly.scatter import plot as scatter_plot
-from unrooted.core.scatter import ScatterData
+from unrooted.plot.plotly import plot_scatter as scatter_plot
+from unrooted.core import ScatterData
 
 sd = ScatterData(x=x_arr, y=y_arr, x_label="η", y_label="pT [GeV]")
 fig = scatter_plot(sd)
@@ -258,20 +280,31 @@ fig = scatter_plot(sd, style=style, label="track candidates")
 fig.show()
 ```
 
-To overlay multiple datasets, use `_add_scatter_trace` directly:
+To overlay multiple datasets, use the public helper:
 
 ```python
-import plotly.graph_objects as go
-from unrooted.plot.plotly.scatter import _add_scatter_trace
-from unrooted.plot.plotly.histogram import DEFAULT_COLORS
-from unrooted.plot.style import HistogramStyle
+from unrooted.plot.plotly import overlay_scatter
 
-fig = go.Figure()
-style = HistogramStyle.as_scatter()
-_add_scatter_trace(fig, sd1, style, DEFAULT_COLORS[0], label="A")
-_add_scatter_trace(fig, sd2, style, DEFAULT_COLORS[1], label="B")
+fig = overlay_scatter([sd1, sd2], labels=["A", "B"])
 fig.show()
 ```
+
+For composition with other plots, `plot_scatter()` accepts an existing
+`fig`. Supply `row` and `col` together for a figure made with
+`plotly.subplots.make_subplots`. Labels apply only to the selected subplot;
+`set_axis_labels=False` retains the existing labels and title.
+
+```python
+from plotly.subplots import make_subplots
+from unrooted.plot.plotly import plot_scatter
+
+fig = make_subplots(rows=1, cols=2)
+plot_scatter(sd1, fig=fig, row=1, col=1, label="A")
+plot_scatter(sd2, fig=fig, row=1, col=2, label="B")
+```
+
+Both scatter backends render marker settings from `HistogramStyle`; histogram
+lines, fills, error settings, and spread settings do not apply to point clouds.
 
 ### 2D histograms
 

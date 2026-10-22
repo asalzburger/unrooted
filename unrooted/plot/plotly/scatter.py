@@ -12,6 +12,11 @@ def plot(
     scatter: ScatterData,
     style: HistogramStyle | None = None,
     label: str | None = None,
+    *,
+    fig: go.Figure | None = None,
+    row: int | None = None,
+    col: int | None = None,
+    set_axis_labels: bool = True,
 ) -> go.Figure:
     """Render a :class:`~unrooted.core.scatter.ScatterData` as a Plotly figure.
 
@@ -20,25 +25,76 @@ def plot(
         style:   Visual style; defaults to
                  :meth:`~unrooted.plot.style.HistogramStyle.as_scatter`.
         label:   Trace name shown in the legend.
+        fig: Existing figure, or None to create one.
+        row: Optional subplot row; supply together with col and an existing figure.
+        col: Optional subplot column.
+        set_axis_labels: Apply this dataset's labels and title when True.
 
     Returns:
         A :class:`plotly.graph_objects.Figure`.
     """
     scatter.validate()
+    if (row is None) != (col is None) or (row is not None and fig is None):
+        raise ValueError(
+            "row and col require each other and an existing subplot figure"
+        )
     eff_style = style if style is not None else HistogramStyle.as_scatter()
     color: str | tuple[float, ...] = (
         eff_style.marker_color
         if eff_style.marker_color is not None
         else DEFAULT_COLORS[0]
     )
+    if fig is None:
+        fig = go.Figure()
+    _add_scatter_trace(fig, scatter, eff_style, color, label=label, row=row, col=col)
+    axis_kw = {"row": row, "col": col} if row is not None else {}
+    if set_axis_labels:
+        if scatter.x_label:
+            fig.update_xaxes(title_text=scatter.x_label, **axis_kw)
+        if scatter.y_label:
+            fig.update_yaxes(title_text=scatter.y_label, **axis_kw)
+        if scatter.title:
+            fig.update_layout(title=scatter.title)
+    return fig
+
+
+def overlay(
+    scatters: list[ScatterData],
+    labels: list[str] | None = None,
+    styles: list[HistogramStyle] | None = None,
+) -> go.Figure:
+    """Overlay point clouds, using the first dataset's axis labels and title.
+
+    Args:
+        scatters: Nonempty list of point clouds.
+        labels: Optional legend labels, one per dataset.
+        styles: Optional styles, one per dataset; otherwise cycle marker colors.
+    """
+    if not scatters:
+        raise ValueError("scatters must not be empty")
+    if labels is not None and len(labels) != len(scatters):
+        raise ValueError("labels must have the same length as scatters")
+    if styles is not None and len(styles) != len(scatters):
+        raise ValueError("styles must have the same length as scatters")
+    for scatter in scatters:
+        scatter.validate()
     fig = go.Figure()
-    _add_scatter_trace(fig, scatter, eff_style, color, label=label)
-    if scatter.x_label:
-        fig.update_xaxes(title_text=scatter.x_label)
-    if scatter.y_label:
-        fig.update_yaxes(title_text=scatter.y_label)
-    if scatter.title:
-        fig.update_layout(title=scatter.title)
+    for i, scatter in enumerate(scatters):
+        color = DEFAULT_COLORS[i % len(DEFAULT_COLORS)]
+        style = (
+            styles[i]
+            if styles is not None
+            else HistogramStyle.as_scatter().with_color(color)
+        )
+        if style.marker_color is None:
+            style = style.with_color(color)
+        plot(
+            scatter,
+            style=style,
+            label=labels[i] if labels is not None else None,
+            fig=fig,
+            set_axis_labels=i == 0,
+        )
     return fig
 
 

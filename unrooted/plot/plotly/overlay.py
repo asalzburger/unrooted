@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import dataclasses
+
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from unrooted.core.histogram import Histogram
-from unrooted.plot.plotly._color import _to_rgba
-from unrooted.plot.plotly.histogram import DEFAULT_COLORS, _add_1d_traces, _staircase
+from unrooted.plot.plotly.histogram import DEFAULT_COLORS, _add_1d_traces
 from unrooted.plot.style import HistogramStyle
 
 
@@ -56,7 +57,7 @@ def overlay(
     else:
         fig = go.Figure()
 
-    resolved_colors: list[str | tuple[float, ...]] = []
+    resolved_styles: list[HistogramStyle] = []
 
     for i, hist in enumerate(hists):
         auto_color = DEFAULT_COLORS[i % len(DEFAULT_COLORS)]
@@ -68,7 +69,7 @@ def overlay(
         )
         if style.line_color is None:
             style = HistogramStyle(**{**style.__dict__, "line_color": auto_color})
-        resolved_colors.append(color)
+        resolved_styles.append(style)
 
         label = labels[i] if labels is not None else None
         row, col = (1, 1) if ratio else (None, None)
@@ -82,7 +83,7 @@ def overlay(
             fig.update_xaxes(title_text=x_label)
 
     if ratio:
-        _add_ratio_panel(fig, hists, resolved_colors, ratio_range=ratio_range)
+        _add_ratio_panel(fig, hists, resolved_styles, ratio_range=ratio_range)
 
     return fig
 
@@ -90,60 +91,35 @@ def overlay(
 def _add_ratio_panel(
     fig: go.Figure,
     hists: list[Histogram],
-    colors: list[str | tuple[float, ...]],
+    styles: list[HistogramStyle],
     ratio_range: tuple[float, float] | None = None,
 ) -> None:
     ref_values = np.asarray(hists[0].values, dtype=float)
     ref_errors = hists[0].errors
     edges = hists[0].axes[0].edges
-    centers = hists[0].axes[0].centers
 
     for i, hist in enumerate(hists[1:], start=1):
-        color = colors[i]
+        style = styles[i]
+        assert style.line_color is not None
         with np.errstate(invalid="ignore", divide="ignore"):
             r = np.where(ref_values != 0, hist.values / ref_values, np.nan)
-            sigma_r = np.where(
-                ref_values != 0,
-                np.sqrt(
-                    (hist.errors / ref_values) ** 2
-                    + (hist.values * ref_errors / ref_values**2) ** 2
-                ),
-                np.nan,
-            )
-
-        x_step, r_step = _staircase(edges, r)
-        color_str = _to_rgba(color, 1.0)
-        fig.add_trace(
-            go.Scatter(
-                x=x_step,
-                y=r_step,
-                mode="lines",
-                line=dict(color=color_str),
-                showlegend=False,
-            ),
-            row=2,
-            col=1,
+            sigma_r = np.zeros_like(r)
+            if style.error_display is not None:
+                sigma_r = np.where(
+                    ref_values != 0,
+                    np.sqrt(
+                        (hist.errors / ref_values) ** 2
+                        + (hist.values * ref_errors / ref_values**2) ** 2
+                    ),
+                    np.nan,
+                )
+        ratio_hist = Histogram(
+            axes=[hists[0].axes[0]],
+            values=r,
+            variances=sigma_r**2,
         )
-        fig.add_trace(
-            go.Scatter(
-                x=centers,
-                y=r,
-                mode="markers",
-                marker=dict(size=0, color="rgba(0,0,0,0)"),
-                error_y=dict(
-                    type="data",
-                    symmetric=True,
-                    array=sigma_r,
-                    color=color_str,
-                    thickness=1.5,
-                    width=2,
-                ),
-                showlegend=False,
-                hoverinfo="skip",
-            ),
-            row=2,
-            col=1,
-        )
+        ratio_style = dataclasses.replace(style, fill_alpha=None, spread_display=None)
+        _add_1d_traces(fig, ratio_hist, ratio_style, style.line_color, row=2, col=1)
 
     # Reference line at ratio = 1
     fig.add_trace(
