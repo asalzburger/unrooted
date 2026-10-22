@@ -2,24 +2,29 @@
 
 ## Installation
 
-`unrooted` requires Python ≥ 3.11.
+`unrooted` requires Python ≥ 3.11. The built-in palettes and logos are included
+in the installation. uv is optional for end users.
 
 === "pip"
     ```bash
-    pip install unrooted
+    git clone https://github.com/asalzburger/unrooted
+    cd unrooted
+    python -m pip install .
     ```
 
 === "uv"
     ```bash
-    uv add unrooted
-    ```
-
-=== "from source"
-    ```bash
     git clone https://github.com/asalzburger/unrooted
     cd unrooted
-    uv sync
+    uv sync --no-dev
     ```
+
+For interactive Plotly figures, use `python -m pip install ".[plotly]"` or
+`uv sync --no-dev --extra plotly` from the checkout. A built wheel can also be
+installed directly with `python -m pip install /path/to/unrooted-<version>-py3-none-any.whl`.
+
+Contributors should use `uv sync --extra dev` and fetch the Git LFS test fixtures with
+`git lfs install` followed by `git lfs pull`.
 
 ---
 
@@ -199,7 +204,7 @@ fig2.show()
 Plotly is an optional dependency:
 
 ```bash
-uv add "unrooted[plotly]"
+uv sync --extra plotly
 ```
 
 ---

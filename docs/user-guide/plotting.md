@@ -164,12 +164,12 @@ ax = plot(h2)
 from unrooted.plot.plotly import plot, overlay
 ```
 
-Install the optional dependency first:
+Install the optional dependency from the source checkout first:
 
 ```bash
-uv add "unrooted[plotly]"
+uv sync --extra plotly
 # or
-pip install "unrooted[plotly]"
+python -m pip install ".[plotly]"
 ```
 
 The plotly backend provides a similar high-level `plot()` / `overlay()` API to

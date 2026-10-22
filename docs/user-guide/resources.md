@@ -1,7 +1,8 @@
 # Resources
 
-The `resources/` directory bundles per-detector assets — logos and color palettes — that
-can be used to give plots a consistent, experiment-specific look.
+Palettes and logos are bundled in `unrooted/resources/` and installed with the
+package. They give plots a consistent, experiment-specific look without
+requiring a resource directory in the current working directory.
 
 ---
 
@@ -57,7 +58,7 @@ Load it with:
 from unrooted.plot import StyleSet
 from unrooted.plot.mpl import plot
 
-ss = StyleSet.load("odd")   # reads resources/odd/colors.json
+ss = StyleSet.load("odd")   # reads the installed ODD palette
 ax = plot(h, style=ss[0])   # first of the four coordinated styles
 ```
 
@@ -71,7 +72,7 @@ Each target ships PNG and SVG variants of both the full-colour and line-art logo
 They are available for use in post-processing workflows or custom plot annotations.
 
 ```
-resources/
+unrooted/resources/
 ├── sd/
 │   ├── super_duper.png          full logo
 │   ├── super_duper.svg
@@ -90,9 +91,41 @@ resources/
 
 ---
 
+## Reading installed logo files
+
+Use `importlib.resources` to access assets in an installed package:
+
+```python
+from importlib.resources import as_file, files
+import matplotlib.pyplot as plt
+
+logo = files("unrooted").joinpath("resources", "odd", "odd_tech_light.png")
+with as_file(logo) as logo_path:
+    image = plt.imread(logo_path)
+```
+
+The `as_file` context provides a filesystem path for APIs that require one.
+Use that path inside the context, since it may refer to a temporary file.
+
+## Generating palette previews
+
+```python
+from unrooted.plot.mpl import generate_stylesheet
+
+generate_stylesheet("odd")  # writes ./odd_stylesheet.png
+generate_stylesheet("sd", "sd_preview.png")  # explicit destination
+```
+
+The default output is `<target>_stylesheet.png` in the current working
+directory. This replaces the previous default of writing beside the palette
+inside `resources/<target>/`. Packaged assets are read as inputs; preview
+generation writes to the selected destination. Its parent directory must
+already exist.
+
 ## Adding a new target
 
-Create a sub-directory under `resources/` and add a `colors.json` with four hex codes:
+In a source checkout, create a sub-directory under `unrooted/resources/` and
+add a `colors.json` with four hex codes:
 
 ```json
 {
@@ -103,4 +136,5 @@ Create a sub-directory under `resources/` and add a `colors.json` with four hex 
 ```
 
 `StyleSet.load("my_detector")` and `generate_stylesheet("my_detector")` will then
-work automatically.  Logo files are optional.
+work in the editable development installation. Rebuild and reinstall the
+package to distribute the new target. Logo files are optional.

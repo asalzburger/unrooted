@@ -39,21 +39,30 @@ I/O  →  Core  →  Plot
 - **Plotly** (`unrooted.plot.plotly`) — interactive browser plots
 - **terminal** (`unrooted.plot.terminal`) — ASCII rendering in the console
 
-Styling is controlled by `HistogramStyle` and `StyleSet`, which loads 4-colour palettes from `resources/<target>/colors.json` (targets: `odd`, `sd`).
+Styling is controlled by `HistogramStyle` and `StyleSet`. The `odd` and `sd`
+palettes and logos are bundled in `unrooted/resources/` and installed with the
+package.
 
 ---
 
 ## Installation
 
-Requires Python ≥ 3.11 and [uv](https://github.com/astral-sh/uv).
+Requires Python ≥ 3.11. Install the current source into your Python environment
+with pip:
 
 ```bash
-# Core + dev tools (lint, type check, tests)
-uv sync --extra dev
+git clone https://github.com/asalzburger/unrooted
+cd unrooted
+python -m pip install .
 
-# Include Plotly backend
-uv sync --extra dev --extra plotly
+# Optional interactive Plotly backend
+python -m pip install ".[plotly]"
 ```
+
+Alternatively, install a built wheel with
+`python -m pip install /path/to/unrooted-<version>-py3-none-any.whl`.
+Contributor setup with [uv](https://github.com/astral-sh/uv) is described under
+[Development](#development).
 
 ---
 
@@ -62,29 +71,49 @@ uv sync --extra dev --extra plotly
 ### Command-line interface
 
 ```bash
-uv run unrooted --help
+unrooted --help
+unrooted --input data.root --draw hist:hx --output histogram.png
 ```
 
 ### Python API
 
-```python
-from unrooted.io.root import reader
-from unrooted.plot.mpl import histogram, overlay
+For a ROOT file containing histograms named `hx` and `hy`:
 
-# Load a histogram from a ROOT file
-h = reader.load("data.root", "my_histogram")
+```python
+from unrooted.io.root import load
+from unrooted.plot.mpl import overlay, plot
+
+h1 = load("data.root", "hx")
+h2 = load("data.root", "hy")
 
 # Plot it
-fig, ax = histogram.plot(h)
-fig.savefig("histogram.png")
+ax = plot(h1)
+ax.figure.savefig("histogram.png")
 
 # Overlay multiple histograms with a ratio panel
-fig, axes = overlay.overlay([h1, h2], ratio=True)
+ax_main, ax_ratio = overlay([h1, h2], labels=["hx", "hy"], ratio=True)
+ax_main.figure.savefig("overlay.png")
 ```
 
 ---
 
 ## Development
+
+Production readiness work is organised in the [staged roadmap](ROADMAP.md).
+
+Clone the repository and install the development tools with uv:
+
+```bash
+git clone https://github.com/asalzburger/unrooted
+cd unrooted
+uv sync --extra dev
+
+# ROOT test fixtures are stored in Git LFS
+git lfs install
+git lfs pull
+```
+
+Then run the checks:
 
 ```bash
 # Run all unit tests
@@ -99,6 +128,19 @@ uv run pyright
 # Run an example script
 uv run python tests/examples/example_styled_histogram.py
 ```
+
+CI also builds a wheel from the source distribution and checks it in an
+environment containing only the declared runtime dependencies:
+
+```bash
+uv build --sdist --out-dir dist
+uv build --wheel dist/*.tar.gz --out-dir dist
+uv venv /tmp/unrooted-wheel
+uv pip install --python /tmp/unrooted-wheel/bin/python dist/*.whl
+/tmp/unrooted-wheel/bin/python -I tests/packaging/smoke.py
+```
+
+The smoke check uses synthetic ROOT data and temporary output directories.
 
 Branch naming: `feat-<topic>`, `fix-<topic>`, `chore-<topic>`.
 

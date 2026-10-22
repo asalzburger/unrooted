@@ -8,14 +8,12 @@ from unrooted.core.axis import Axis
 from unrooted.core.histogram import Histogram
 from unrooted.plot.style_set import StyleSet
 
-_RESOURCES = Path(__file__).parent.parent.parent.parent / "resources"
-
 
 def generate_stylesheet(
     target: str,
     output: Path | str | None = None,
 ) -> Path:
-    """Render a style-palette preview PNG and save it next to the resources.
+    """Render a style-palette preview PNG to a user-writable destination.
 
     Produces a single plot with four overlaid synthetic Gaussian histograms —
     one per style slot — so the color, line, marker, fill, and error-bar
@@ -23,11 +21,11 @@ def generate_stylesheet(
 
     Args:
         target: Resource target name, e.g. ``"odd"`` or ``"sd"``.
-        output: Destination path.  Defaults to
-                ``resources/{target}/stylesheet.png``.
+        output: Destination path. Defaults to ``{target}_stylesheet.png`` in
+                the current working directory. The parent directory must exist.
 
     Returns:
-        The resolved output path.
+        The output path, retaining a relative path when one was supplied.
     """
     import matplotlib
 
@@ -48,9 +46,11 @@ def generate_stylesheet(
     overlay(hists, ax=ax, labels=labels, styles=styles)
     ax.set_title(f"{target.upper()} style palette", fontsize=13, fontweight="bold")
 
-    out = Path(output) if output is not None else _RESOURCES / target / "stylesheet.png"
-    fig.savefig(out, dpi=150, bbox_inches="tight")
-    plt.close(fig)
+    out = Path(output) if output is not None else Path(f"{target}_stylesheet.png")
+    try:
+        fig.savefig(out, dpi=150, bbox_inches="tight")
+    finally:
+        plt.close(fig)
     return out
 
 

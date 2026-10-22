@@ -145,10 +145,11 @@ Both I/O backends produce the same type; all plot backends consume it.
 ## Resource targets
 
 Each detector or experiment can have its own *resource target* — a directory
-under `resources/` containing logos and a color palette:
+under `unrooted/resources/` containing logos and a color palette. These assets
+are included in the installed package and read with `importlib.resources`:
 
 ```
-resources/
+unrooted/resources/
 ├── odd/
 │   ├── odd_tech_light.png      full logo
 │   ├── odd_tech_light_line.png
@@ -163,4 +164,5 @@ resources/
 
 Adding a new target requires a `colors.json` with four hex codes; logo files
 (PNG/SVG) are optional.  `StyleSet.load()` and `generate_stylesheet()` work
-automatically once `colors.json` is present.
+automatically once `colors.json` is present in the package. Generated previews
+default to `<target>_stylesheet.png` in the current working directory.

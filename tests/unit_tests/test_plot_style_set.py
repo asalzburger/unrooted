@@ -109,12 +109,14 @@ def test_generate_stylesheet_odd(tmp_path: Path) -> None:
     assert out.stat().st_size > 0
 
 
-def test_generate_stylesheet_default_path_sd() -> None:
-    from unrooted.plot.mpl.stylesheet import _RESOURCES, generate_stylesheet
+def test_generate_stylesheet_default_path_sd(tmp_path: Path, monkeypatch) -> None:
+    from unrooted.plot.mpl.stylesheet import generate_stylesheet
 
+    monkeypatch.chdir(tmp_path)
     out = generate_stylesheet("sd")
-    assert out == _RESOURCES / "sd" / "stylesheet.png"
+    assert out == Path("sd_stylesheet.png")
     assert out.exists()
+    assert out.stat().st_size > 0
 
 
 # ---------------------------------------------------------------------------
