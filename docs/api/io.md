@@ -1,8 +1,8 @@
 # I/O
 
-All I/O functions return a [`Histogram`](core.md#histogram).  Two backends are
-available — they share the same output type so histograms from either source are
-interchangeable downstream.
+Histogram readers return a [`Histogram`](core.md#histogram); `load_scatter`
+returns [`ScatterData`](core.md#scatterdata). ROOT and boost-histogram readers
+share the histogram type so their outputs are interchangeable downstream.
 
 ---
 
@@ -22,6 +22,10 @@ No ROOT installation required.
 ### load_branch
 
 ::: unrooted.io.root.tree.load_branch
+
+### load_scatter
+
+::: unrooted.io.root.tree.load_scatter
 
 ---
 

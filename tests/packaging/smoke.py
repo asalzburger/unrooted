@@ -11,6 +11,7 @@ import subprocess
 import sys
 from contextlib import chdir
 from importlib.resources import files
+from importlib.util import find_spec
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -34,9 +35,9 @@ def main() -> None:
         import numpy as np
         import uproot
 
-        from unrooted.io.root import load, load_efficiency
+        from unrooted.io.root import load, load_efficiency, load_scatter
         from unrooted.plot import StyleSet
-        from unrooted.plot.mpl import generate_stylesheet, overlay, plot
+        from unrooted.plot.mpl import generate_stylesheet, overlay, plot, plot_scatter
 
         resources = files("unrooted").joinpath("resources")
         for target, logo_stem in [("odd", "odd_tech_light"), ("sd", "super_duper")]:
@@ -66,6 +67,8 @@ def main() -> None:
             root_file["hy"] = (np.array([3.0, 2.0, 5.0]), edges)
             root_file["passed"] = (np.array([0.0, 2.0, 4.0]), edges)
             root_file["total"] = (np.array([4.0, 4.0, 4.0]), edges)
+            tree = root_file.mktree("tree", {"x": "float64", "y": "float64"})
+            tree.extend({"x": np.array([0.0, 1.0]), "y": np.array([2.0, 3.0])})
 
         efficiency = load_efficiency(root_path, "passed", "total")
         np.testing.assert_allclose(
@@ -85,12 +88,17 @@ def main() -> None:
         ax_main.figure.savefig(workdir / "overlay.png")
         plt.close(ax_main.figure)
 
+        points = load_scatter(root_path, "tree", "x", "y")
+        ax_scatter = plot_scatter(points, label="Points")
+        ax_scatter.figure.savefig(workdir / "scatter.png")
+        plt.close(ax_scatter.figure)
+
         cli_name = "unrooted.exe" if os.name == "nt" else "unrooted"
         cli = Path(sys.executable).parent / cli_name
         env = os.environ.copy()
         env.pop("PYTHONPATH", None)
 
-        def run_cli(*arguments: str) -> str:
+        def run_cli(*arguments: str, expected_code: int = 0) -> str:
             result = subprocess.run(
                 [str(cli), *arguments],
                 cwd=workdir,
@@ -99,18 +107,43 @@ def main() -> None:
                 text=True,
                 timeout=60,
             )
-            assert result.returncode == 0, result.stderr
-            return result.stdout
+            assert result.returncode == expected_code, result.stderr
+            assert "Traceback" not in result.stderr
+            return result.stdout if expected_code == 0 else result.stderr
 
         assert "--input" in run_cli("--help")
+        base_args = ["--input", str(root_path), "--draw", "hist:hx"]
+        assert run_cli(*base_args, "--backend", "terminal").strip()
+        assert "unrooted: error loading data:" in run_cli(
+            "--input",
+            str(workdir / "missing.root"),
+            "--draw",
+            "hist:hx",
+            expected_code=1,
+        )
+        assert "--ratio-range requires --add ratio" in run_cli(
+            *base_args,
+            "--ratio-range",
+            "0",
+            "2",
+            expected_code=2,
+        )
+        if find_spec("plotly") is None:
+            assert "unrooted[plotly]" in run_cli(
+                *base_args,
+                "--backend",
+                "plotly",
+                "--output",
+                str(workdir / "plot.html"),
+                expected_code=1,
+            )
         for target in ["odd", "sd"]:
-            args = ["--input", str(root_path), "--draw", "hist:hx", "--palette", target]
-            assert run_cli(*args, "--backend", "terminal").strip()
+            args = [*base_args, "--palette", target]
             output = workdir / f"cli-{target}.png"
             run_cli(*args, "--output", str(output))
             assert output.stat().st_size > 0
 
-        for name in ["api.png", "overlay.png"]:
+        for name in ["api.png", "overlay.png", "scatter.png"]:
             assert (workdir / name).stat().st_size > 0
 
     print("Installed wheel smoke checks passed: palettes, assets, API, and CLI.")

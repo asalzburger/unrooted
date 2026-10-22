@@ -25,9 +25,9 @@ incompatible-bin ratios, invalid efficiency inputs, and CLI inconsistencies.
 | --- | --- | --- |
 | 1 | Installed distributions work outside the checkout | Complete |
 | 2 | Profile calculations agree with numerical references | Complete |
-| 3 | Data and statistical contracts are explicit and enforced | Complete locally |
-| 4 | CLI and plotting backends honor their public contracts | Next |
-| 5 | Data loading has a tested resource envelope | Planned |
+| 3 | Data and statistical contracts are explicit and enforced | Complete |
+| 4 | CLI and plotting backends honor their public contracts | Complete locally |
+| 5 | Data loading has a tested resource envelope | Next |
 | 6 | CI and contributor setup reproduce supported configurations | Planned |
 | 7 | A release candidate passes installation and documentation rehearsal | Planned |
 
@@ -128,23 +128,49 @@ from the sdist passed the runtime-only packaging smoke check outside the
 checkout on Python 3.11, including Wilson endpoint bounds. Package and
 changed-test Ruff, package Pyright, strict documentation build, and
 `git diff --check` passed. The generated efficiency figure was inspected.
+The test and distribution CI jobs passed on
+[PR 28](https://github.com/asalzburger/unrooted/pull/28), which was merged.
 
 ## Stage 4 CLI and backend consistency
 
-- [ ] Apply Plotly axis-label overrides and single-histogram legend labels.
-- [ ] Respect ratio error-display and line-style settings across backends.
-- [ ] Give missing files, unsupported objects, invalid options, and export
+- [x] Apply Plotly axis-label overrides and single-histogram legend labels.
+- [x] Respect ratio error-display and line-style settings across backends.
+- [x] Give missing files, unsupported objects, invalid options, and export
   failures consistent messages and exit codes.
-- [ ] Check source prefixes, multi-file label defaults, and unsupported option
+- [x] Check source prefixes, multi-file label defaults, and unsupported option
   combinations in command-level tests.
-- [ ] Establish public scatter exports and composition helpers so examples
+- [x] Establish public scatter exports and composition helpers so examples
   can use public APIs.
-- [ ] Document backend capabilities and optional static-image dependencies.
+- [x] Document backend capabilities and optional static-image dependencies.
 
 **Completion:** command-level tests exercise saved Matplotlib and Plotly
 output, terminal rendering, labels, ratios, and representative failures.
 User-visible settings either work or receive an explicit unsupported-option
 error.
+
+**Behavior:** graphical ratio panels use the numerator's line, marker, and
+error settings, excluding main-panel fill and spread. CLI main/ratio labels
+and ranges are applied separately. Filename stems label N-files/one-spec
+overlays; other combinations use draw keys. `--source` prefixes histogram and
+efficiency keys, while branch specs retain explicit tree paths. Public
+`plot_scatter` and `overlay_scatter` are exported from both graphical
+backends; Plotly scatter can compose into an existing figure or subplot.
+Invalid arguments/combinations exit `2`; operational failures exit `1` with
+an `unrooted:` message. Unsupported flags are rejected explicitly.
+
+**Verification on October 22, 2026:** 609 unit tests passed on Python 3.11.15
+and 3.14.6. New workflows use synthetic ROOT files, inspect saved Matplotlib
+SVG and Plotly HTML output, and run CLI subprocesses for output and exit-code
+checks. Regression tests cover ratio display modes, marker-only ratios,
+disabled uncertainty calculations, labels/ranges, source prefixes, file/spec
+combinations, scatter composition, and loading/export failures. Package and
+changed-test Ruff, package Pyright, strict documentation build, and
+`git diff --check` passed. The generated ratio example was inspected.
+A runtime-only Python 3.11 installation of a wheel built from the sdist
+passed the packaging smoke check outside the checkout, including scatter
+exports and the missing-Plotly diagnostic. Successful Plotly static-image
+export was not exercised: HTML export and the static-export failure path
+were tested, and optional Kaleido/browser setup is documented.
 
 ## Stage 5 Realistic workloads
 

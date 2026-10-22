@@ -82,6 +82,8 @@ def parse_draw_spec(spec: str) -> DrawSpec:
         )
     draw_type = _TYPE_ALIASES[raw_type]
     rest = parts[1:]
+    if any(not part.strip() for part in rest):
+        raise ValueError(f"Draw spec keys and branch names must not be empty: {spec!r}")
 
     if draw_type == "eff":
         if len(rest) != 2:

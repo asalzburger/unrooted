@@ -19,19 +19,21 @@ I/O  →  Core  →  Plot
 
 | Layer | Package | Description |
 |-------|---------|-------------|
-| **I/O** | `unrooted.io.root` | Reads ROOT files via uproot; returns `Histogram` objects |
-| **Core** | `unrooted.core` | `Axis` and `Histogram` numpy-backed dataclasses |
+| **I/O** | `unrooted.io.root` | Reads ROOT files via uproot; returns histograms or point clouds |
+| **Core** | `unrooted.core` | `Axis`, `Histogram`, and `ScatterData` NumPy-backed dataclasses |
 | **Plot** | `unrooted.plot` | Matplotlib, Plotly, and terminal backends |
 
 ### Core data structures
 
 - **`Axis`** — bin edges + label; computed properties `centers`, `widths`, `n_bins`
 - **`Histogram`** — holds `axes`, `values`, `variances`, `overflow`, and optional `spread_min`/`spread_max` for profiles and efficiency histograms
+- **`ScatterData`** — flat x/y arrays, exported from `unrooted` and `unrooted.core`
 
 ### I/O backends
 
 - `reader.load(path, key)` — reads TH1/TH2/TProfile via uproot
 - `reader.load_efficiency(path, pass_key, total_key)` — binomial efficiency from two TH1s
+- `load_scatter(path, tree, x_branch, y_branch)` — raw points from two branches
 
 ### Plot backends
 
@@ -100,6 +102,12 @@ Efficiency readers instead require unweighted integer passed/total counts and
 return Wilson interval bounds (68.27% by default). See the
 [data and statistical contracts](docs/user-guide/histograms.md) and
 [efficiency guide](docs/user-guide/loading-root.md#efficiency-histograms).
+
+For point clouds, import `load_scatter` from `unrooted.io.root` and
+`plot_scatter` / `overlay_scatter` from either graphical backend. The
+[plotting guide](docs/user-guide/plotting.md) covers public composition APIs;
+the [CLI guide](docs/user-guide/cli.md#backends) lists backend capabilities
+and optional Plotly static export requirements.
 
 ---
 

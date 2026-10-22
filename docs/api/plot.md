@@ -22,6 +22,18 @@ Style classes and plotting functions for both backends.
 
 ::: unrooted.plot.mpl.overlay.overlay
 
+### plot_scatter
+
+Exported as `unrooted.plot.mpl.plot_scatter`.
+
+::: unrooted.plot.mpl.scatter.plot
+
+### overlay_scatter
+
+Exported as `unrooted.plot.mpl.overlay_scatter`.
+
+::: unrooted.plot.mpl.scatter.overlay
+
 ### generate_stylesheet
 
 ::: unrooted.plot.mpl.stylesheet.generate_stylesheet
@@ -37,6 +49,18 @@ Style classes and plotting functions for both backends.
 ### overlay
 
 ::: unrooted.plot.plotly.overlay.overlay
+
+### plot_scatter
+
+Exported as `unrooted.plot.plotly.plot_scatter`.
+
+::: unrooted.plot.plotly.scatter.plot
+
+### overlay_scatter
+
+Exported as `unrooted.plot.plotly.overlay_scatter`.
+
+::: unrooted.plot.plotly.scatter.overlay
 
 ---
 

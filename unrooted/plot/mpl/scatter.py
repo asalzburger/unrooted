@@ -56,3 +56,39 @@ def plot(
             ax.set_title(scatter.title)
 
     return ax
+
+
+def overlay(
+    scatters: list[ScatterData],
+    ax: MplAxes | None = None,
+    labels: list[str] | None = None,
+    styles: list[HistogramStyle] | None = None,
+) -> MplAxes:
+    """Overlay point clouds, using the first dataset's axis labels and title.
+
+    Args:
+        scatters: Nonempty list of point clouds.
+        ax: Existing axes, or None to create a figure.
+        labels: Optional legend labels, one per dataset.
+        styles: Optional styles, one per dataset; defaults to scatter markers.
+    """
+    if not scatters:
+        raise ValueError("scatters must not be empty")
+    if labels is not None and len(labels) != len(scatters):
+        raise ValueError("labels must have the same length as scatters")
+    if styles is not None and len(styles) != len(scatters):
+        raise ValueError("styles must have the same length as scatters")
+    for scatter in scatters:
+        scatter.validate()
+    for i, scatter in enumerate(scatters):
+        ax = plot(
+            scatter,
+            ax=ax,
+            style=styles[i] if styles is not None else None,
+            label=labels[i] if labels is not None else None,
+            set_axis_labels=i == 0,
+        )
+    assert ax is not None
+    if labels is not None:
+        ax.legend()
+    return ax

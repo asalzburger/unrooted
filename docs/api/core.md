@@ -9,3 +9,7 @@ The core data structures used throughout `unrooted`.
 ## Axis
 
 ::: unrooted.core.axis.Axis
+
+## ScatterData
+
+::: unrooted.core.scatter.ScatterData

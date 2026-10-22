@@ -13,7 +13,13 @@ LoadedItem = Histogram | ScatterData
 
 
 def _full_key(source: str, key: str) -> str:
-    return f"{source}/{key}" if source else key
+    prefix = source.strip("/")
+    return f"{prefix}/{key.lstrip('/')}" if prefix else key
+
+
+def _spec_label(spec: DrawSpec) -> str:
+    key = spec.keys[0] if spec.draw_type == "eff" else spec.keys[-1]
+    return key.split("/")[-1].split(";")[0]
 
 
 def _load_one(
@@ -38,15 +44,31 @@ def _load_one(
             return load_scatter(path, tree_key, x_branch, spec.keys[2])
         if sub == "prof":
             return load_branch(
-                path, tree_key, x_branch, spec.keys[2],
-                n_bins=n_bins, range=branch_range,
+                path,
+                tree_key,
+                x_branch,
+                spec.keys[2],
+                n_bins=n_bins,
+                range=branch_range,
             )
         # count
         return load_branch(
-            path, tree_key, x_branch,
-            n_bins=n_bins, range=branch_range,
+            path,
+            tree_key,
+            x_branch,
+            n_bins=n_bins,
+            range=branch_range,
         )
-    return load(path, _full_key(source, spec.keys[0]))
+    hist = load(path, _full_key(source, spec.keys[0]))
+    if spec.draw_type == "th2" and hist.ndim != 2:
+        raise ValueError(
+            f"th2: requires a 2D histogram; {spec.keys[0]!r} is {hist.ndim}D"
+        )
+    if spec.draw_type == "prof" and hist.spread_min is None:
+        raise ValueError(
+            f"prof: requires a TProfile; {spec.keys[0]!r} has no profile data"
+        )
+    return hist
 
 
 def resolve_loads(
@@ -77,13 +99,13 @@ def resolve_loads(
 
     if n_f == 1 and n_s >= 1:
         pairs = [(files[0], s) for s in specs]
-        label_fn = lambda f, s: s.keys[-1].split("/")[-1]  # noqa: E731
+        label_fn = lambda f, s: _spec_label(s)  # noqa: E731
     elif n_f > 1 and n_s == 1:
         pairs = [(f, specs[0]) for f in files]
         label_fn = lambda f, s: Path(f).stem  # noqa: E731
     elif n_f == n_s:
         pairs = list(zip(files, specs))
-        label_fn = lambda f, s: s.keys[-1].split("/")[-1]  # noqa: E731
+        label_fn = lambda f, s: _spec_label(s)  # noqa: E731
     else:
         raise ValueError(
             f"Cannot combine {n_f} input file(s) with {n_s} draw spec(s). "
