@@ -162,7 +162,8 @@ when the spread is meant to represent a smooth underlying function.
 
 ## `StyleSet` — coordinated palettes
 
-`StyleSet` loads a four-color palette from `resources/{target}/colors.json` and
+`StyleSet` loads a four-color palette bundled in
+`unrooted/resources/{target}/colors.json` and
 assembles four ready-to-use `HistogramStyle` objects from that palette combined
 with `DEFAULT_STYLE_TEMPLATES`.
 
@@ -247,6 +248,10 @@ overlay([h1, h2, h3, h4],
 ```python
 from unrooted.plot.mpl import generate_stylesheet
 
-generate_stylesheet("odd")  # writes resources/odd/stylesheet.png
-generate_stylesheet("sd")   # writes resources/sd/stylesheet.png
+generate_stylesheet("odd")  # writes ./odd_stylesheet.png
+generate_stylesheet("sd")   # writes ./sd_stylesheet.png
+generate_stylesheet("odd", "preview.png")  # explicit output path
 ```
+
+The destination's parent directory must exist. See [Resources](resources.md)
+for the packaged asset layout and logo access.

@@ -11,15 +11,18 @@ unrooted --input file.root --draw hist:hx --output plot.png
 
 ## Installation
 
-The command is registered automatically when the package is installed:
+The command is registered automatically when the package is installed. Follow
+[Getting Started](../getting-started.md#installation), or run from a source
+checkout:
 
 ```bash
-pip install unrooted
+python -m pip install .
 # or
-uv add unrooted
+uv sync --no-dev
 ```
 
-After installation `unrooted --help` should be available on your PATH.
+After a pip installation, `unrooted --help` should be available on your PATH.
+With uv, use `uv run unrooted --help` and prefix the commands below with `uv run`.
 
 ---
 
@@ -248,7 +251,7 @@ Colors cycle automatically across multiple histograms.
 | `--backend` | Output | Notes |
 |-------------|--------|-------|
 | `mpl` (default) | matplotlib figure | saved with `--output`; supports `.png/.svg/.pdf` |
-| `plotly` | interactive HTML/image | `.html` for interactive; requires `pip install 'unrooted[plotly]'` |
+| `plotly` | interactive HTML/image | `.html` for interactive; install the optional Plotly backend as described in Getting Started |
 | `terminal` | unicode to stdout | no output file; `--max-lines N` controls height |
 
 ---

@@ -26,7 +26,7 @@ uv run pyright
 # Run an example script
 uv run python tests/examples/example_styled_histogram.py
 
-# Regenerate stylesheet preview PNGs (after changing colors.json)
+# Generate stylesheet previews in the current directory (after changing colors.json)
 uv run python -c "from unrooted.plot.mpl.stylesheet import generate_stylesheet; generate_stylesheet('odd'); generate_stylesheet('sd')"
 ```
 
@@ -47,7 +47,7 @@ Every reader returns a `Histogram`. Currently only the ROOT backend exists:
 
 ### Plot (`unrooted/plot/`)
 - `style.HistogramStyle` — single dataclass controlling line, fill, marker, error, and spread rendering
-- `style_set.StyleSet` — loads `resources/{target}/colors.json` and combines four palette colors with four `_STYLE_TEMPLATES` (line style + marker combinations) into a ready-to-use `styles` list; index wraps cyclically
+- `style_set.StyleSet` — loads packaged `unrooted/resources/{target}/colors.json` through `importlib.resources` and combines four palette colors with four `_STYLE_TEMPLATES` (line style + marker combinations) into a ready-to-use `styles` list; index wraps cyclically
 - `mpl/histogram.plot()` — dispatches to `_plot_1d`, `_plot_1d_styled`, or `_plot_2d`; `_plot_1d_styled` renders in five ordered layers: fill → line → markers → errors → spread
 - `mpl/overlay.overlay()` — multi-histogram overlay with optional ratio panel
 - `mpl/scatter.plot()` — renders a `ScatterData` point cloud; `_add_scatter_trace` is the composable primitive used by the CLI for multi-dataset overlays
@@ -58,8 +58,11 @@ Every reader returns a `Histogram`. Currently only the ROOT backend exists:
 - `plotly/overlay.overlay()` — multi-histogram overlay returning a single `go.Figure`
 - `terminal/` — alternative backend with the same `plot()` / `overlay()` entry points (histograms only; scatter not supported)
 
-### Resources (`resources/<target>/`)
+### Resources (`unrooted/resources/<target>/`)
 Each target (e.g. `odd`, `sd`) contains `colors.json` (4-color palette) and logo assets. `StyleSet.load(target)` is the only consumer of `colors.json`.
+
+`generate_stylesheet(target)` writes `<target>_stylesheet.png` in the current
+working directory. Pass an explicit output path to update a preview asset.
 
 ## Developer guide
 

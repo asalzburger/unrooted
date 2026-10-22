@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from pathlib import Path
+from importlib.resources import files
 from typing import Any, Literal
 
 from unrooted.plot.style import HistogramStyle
-
-_RESOURCES = Path(__file__).parent.parent.parent / "resources"
 
 
 @dataclass
@@ -73,7 +71,7 @@ class StyleSet:
         show_errors: bool = True,
         show_spread: bool = False,
     ) -> StyleSet:
-        """Load from ``resources/{target}/colors.json``.
+        """Load a palette bundled in ``unrooted/resources/{target}/colors.json``.
 
         Args:
             target:      Resource target name, e.g. ``"odd"`` or ``"sd"``.
@@ -89,8 +87,8 @@ class StyleSet:
         Raises:
             FileNotFoundError: When no ``colors.json`` exists for *target*.
         """
-        path = _RESOURCES / target / "colors.json"
-        data: dict[str, Any] = json.loads(path.read_text())
+        palette = files("unrooted").joinpath("resources", target, "colors.json")
+        data: dict[str, Any] = json.loads(palette.read_text(encoding="utf-8"))
         colors: list[str] = data["colors"]
 
         tmpl_list = templates if templates is not None else DEFAULT_STYLE_TEMPLATES

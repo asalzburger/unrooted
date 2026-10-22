@@ -28,3 +28,32 @@ jobs:
 
       - name: Test
         run: uv run pytest tests/unit_tests/ -v
+
+  distribution:
+    runs-on: ubuntu-latest
+    env:
+      MPLBACKEND: Agg
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build sdist and wheel
+        run: |
+          uv build --sdist --out-dir dist
+          uv build --wheel dist/*.tar.gz --out-dir dist
+
+      - name: Install wheel with runtime dependencies
+        run: |
+          uv venv "$RUNNER_TEMP/unrooted-wheel"
+          uv pip install --python "$RUNNER_TEMP/unrooted-wheel/bin/python" dist/*.whl
+
+      - name: Check installed wheel outside the checkout
+        working-directory: ${{ runner.temp }}
+        run: |
+          "$RUNNER_TEMP/unrooted-wheel/bin/python" -I \
+            "$GITHUB_WORKSPACE/tests/packaging/smoke.py"
