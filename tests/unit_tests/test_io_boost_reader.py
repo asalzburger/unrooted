@@ -1,5 +1,5 @@
-from pathlib import Path
 import pickle
+from pathlib import Path
 
 import boost_histogram as bh
 import numpy as np
@@ -160,12 +160,16 @@ def test_load_weight_variances() -> None:
 
 
 def test_load_efficiency_ndim(eff_data: dict) -> None:
-    hist = load_efficiency(eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta")
+    hist = load_efficiency(
+        eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta"
+    )
     assert hist.ndim == 1
 
 
 def test_load_efficiency_name(eff_data: dict) -> None:
-    hist = load_efficiency(eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta")
+    hist = load_efficiency(
+        eff_data["accepted"], eff_data["total"], name="trackeff_vs_eta"
+    )
     assert hist.name == "trackeff_vs_eta"
 
 

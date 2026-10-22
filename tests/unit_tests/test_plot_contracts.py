@@ -3,7 +3,6 @@
 import importlib
 import warnings
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -21,12 +20,6 @@ def backend_module(backend, module):
     if backend == "plotly":
         pytest.importorskip("plotly")
     return importlib.import_module(f"unrooted.plot.{backend}.{module}")
-
-
-@pytest.fixture(autouse=True)
-def close_test_figures():
-    yield
-    plt.close("all")
 
 
 @pytest.mark.parametrize("backend", ["mpl", "plotly", "terminal"])

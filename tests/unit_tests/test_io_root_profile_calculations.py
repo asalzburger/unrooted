@@ -14,7 +14,9 @@ from unrooted.io.root import load_branch
 
 def _write_tree(path: Path, x: np.ndarray, **branches: np.ndarray) -> None:
     with uproot.recreate(path) as root_file:
-        root_file.mktree("tree", {"x": x, **branches})
+        data = {"x": x, **branches}
+        root_file.mktree("tree", {name: array.dtype for name, array in data.items()})
+        root_file["tree"].extend(data)
 
 
 def test_profile_bin_boundaries_match_count_histogram(tmp_path: Path) -> None:

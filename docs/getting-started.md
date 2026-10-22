@@ -23,8 +23,9 @@ For interactive Plotly figures, use `python -m pip install ".[plotly]"` or
 `uv sync --no-dev --extra plotly` from the checkout. A built wheel can also be
 installed directly with `python -m pip install /path/to/unrooted-<version>-py3-none-any.whl`.
 
-Contributors should use `uv sync --extra dev` and fetch the Git LFS test fixtures with
+Contributors should use `uv sync --locked --group docs --extra plotly` and fetch the Git LFS test fixtures with
 `git lfs install` followed by `git lfs pull`.
+See the [contributor workflow](contributing.md) for the complete checks and support matrix.
 
 ---
 
@@ -46,7 +47,8 @@ h = Histogram(
 )
 ```
 
-All I/O functions produce a `Histogram`; all plot functions consume one.
+Histogram readers produce a `Histogram`; histogram plotting functions consume one.
+Point-cloud readers and scatter plotting functions use `ScatterData`.
 Switching between I/O backends or plot backends requires no changes to the
 code between them.
 
@@ -167,7 +169,7 @@ ax.figure.savefig("overlay.png")
 Add `ratio=True` to draw a ratio panel:
 
 ```python
-(ax_main, ax_ratio) = overlay([h1, h2], labels=["ref", "alt"],
+(ax_main, ax_ratio) = overlay([h_root, h_boost], labels=["ROOT", "boost"],
                                styles=[ss[0], ss[1]], ratio=True)
 ```
 
@@ -197,7 +199,7 @@ from unrooted.plot.plotly import plot, overlay
 fig = plot(h)
 fig.show()                         # opens in browser
 
-fig2 = overlay([h1, h2], labels=["hx", "hy"], ratio=True)
+fig2 = overlay([h_root, h_boost], labels=["ROOT", "boost"], ratio=True)
 fig2.show()
 ```
 
@@ -217,7 +219,7 @@ No display needed — `unrooted.plot.terminal` renders directly to a unicode str
 from unrooted.plot.terminal import plot, overlay
 
 print(plot(h))
-print(overlay([h1, h2], labels=["hx", "hy"]))
+print(overlay([h_root, h_boost], labels=["ROOT", "boost"]))
 ```
 
 Useful for sanity-checking histograms in scripts, notebooks, SSH sessions, or CI logs.

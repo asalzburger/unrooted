@@ -10,12 +10,6 @@ from unrooted.core import Axis, Histogram, ScatterData
 from unrooted.plot.style import HistogramStyle
 
 
-@pytest.fixture(autouse=True)
-def close_figures():
-    yield
-    plt.close("all")
-
-
 def backend_module(backend):
     if backend == "plotly":
         pytest.importorskip("plotly")

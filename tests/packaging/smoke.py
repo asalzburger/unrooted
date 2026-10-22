@@ -183,6 +183,17 @@ def main() -> None:
                 str(workdir / "plot.html"),
                 expected_code=1,
             )
+        else:
+            from unrooted.plot.plotly import plot as plot_interactive
+            from unrooted.plot.plotly import plot_scatter as plot_points_interactive
+
+            plot_interactive(h1).write_html(workdir / "api.html")
+            plot_points_interactive(sampled).write_html(workdir / "scatter.html")
+            run_cli(
+                *base_args, "--backend", "plotly", "--output", str(workdir / "cli.html")
+            )
+            for name in ["api.html", "scatter.html", "cli.html"]:
+                assert (workdir / name).stat().st_size > 0
         for target in ["odd", "sd"]:
             args = [*base_args, "--palette", target]
             output = workdir / f"cli-{target}.png"

@@ -108,7 +108,9 @@ def test_draw_range_continuous_uses_centers_not_edges():
     _draw_range(ax, centers, values, lo, hi, edges, "continuous", "blue", 0.2)
     poly = [c for c in ax.collections if isinstance(c, PolyCollection)][0]
     # fill_between with 3 centers produces a single polygon path with 3 unique x coords
-    x_coords = np.unique(np.concatenate([path.vertices[:, 0] for path in poly.get_paths()]))
+    x_coords = np.unique(
+        np.concatenate([path.vertices[:, 0] for path in poly.get_paths()])
+    )
     assert len(x_coords) == len(centers)
 
 
@@ -456,7 +458,11 @@ def test_as_profile_no_marker():
 def test_with_color_fills_none_fields():
     s = HistogramStyle.as_line().with_color("#3A6FA8")
     color_fields = (
-        "line_color", "marker_color", "fill_color", "error_color", "spread_color"
+        "line_color",
+        "marker_color",
+        "fill_color",
+        "error_color",
+        "spread_color",
     )
     for field in color_fields:
         assert getattr(s, field) == "#3A6FA8"

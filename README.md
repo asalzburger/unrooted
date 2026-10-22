@@ -49,7 +49,7 @@ package.
 
 ## Installation
 
-Requires Python ≥ 3.11. Install the current source into your Python environment
+Requires Python ≥ 3.11; CI covers CPython 3.11–3.15. Install the current source into your Python environment
 with pip:
 
 ```bash
@@ -120,7 +120,7 @@ Clone the repository and install the development tools with uv:
 ```bash
 git clone https://github.com/asalzburger/unrooted
 cd unrooted
-uv sync --extra dev
+uv sync --locked --group docs --extra plotly
 
 # ROOT test fixtures are stored in Git LFS
 git lfs install
@@ -131,30 +131,23 @@ Then run the checks:
 
 ```bash
 # Run all unit tests
-uv run pytest tests/unit_tests/
+uv run --no-sync python -I -m pytest -q
 
 # Lint
-uv run ruff check unrooted/
+uv run --no-sync ruff check .
 
 # Type check
-uv run pyright
+uv run --no-sync python -I -m pyright
 
-# Run an example script
-uv run python tests/examples/example_styled_histogram.py
+# Execute introductory examples and build documentation
+uv run --no-sync python -I tests/documentation/smoke.py
+uv run --no-sync python -I -m mkdocs build --strict --site-dir /tmp/unrooted-docs-site
 ```
 
-CI also builds a wheel from the source distribution and checks it in an
-environment containing only the declared runtime dependencies:
-
-```bash
-uv build --sdist --out-dir dist
-uv build --wheel dist/*.tar.gz --out-dir dist
-uv venv /tmp/unrooted-wheel
-uv pip install --python /tmp/unrooted-wheel/bin/python dist/*.whl
-/tmp/unrooted-wheel/bin/python -I tests/packaging/smoke.py
-```
-
-The smoke check uses synthetic ROOT data and temporary output directories.
+The [contributor guide](docs/contributing.md) explains the support matrix,
+dependency bounds, lockfile updates, minimum-version testing, and installed-wheel
+rehearsal. CI checks base and Plotly environments on Linux/macOS, builds docs
+strictly on pull requests, and checks installed wheels on Python 3.11 and 3.15.
 
 Branch naming: `feat-<topic>`, `fix-<topic>`, `chore-<topic>`.
 

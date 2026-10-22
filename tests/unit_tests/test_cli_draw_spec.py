@@ -1,6 +1,6 @@
 import pytest
 
-from unrooted.cli._draw_spec import DrawSpec, parse_draw_spec
+from unrooted.cli._draw_spec import parse_draw_spec
 
 
 def test_hist_simple():
