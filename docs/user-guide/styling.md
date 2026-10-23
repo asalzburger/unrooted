@@ -17,6 +17,9 @@ from unrooted.plot.style import HistogramStyle, LineStyle
 # Step fill + error bars — default for count histograms
 s = HistogramStyle.as_hist()
 
+# Filled stack component + outline; uncertainty belongs to the total
+s = HistogramStyle.as_stack()
+
 # Step line only — no fill, no error display
 s = HistogramStyle.as_line()
 

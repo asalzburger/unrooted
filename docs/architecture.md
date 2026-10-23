@@ -65,7 +65,7 @@ can represent more dimensions than the plotting backends render. See the
 
 Import `plot` and `overlay` from `unrooted.plot.mpl`,
 `unrooted.plot.plotly`, or `unrooted.plot.terminal`. Graphical backends also
-export `plot_scatter` and `overlay_scatter`.
+export `stack`, `plot_scatter`, and `overlay_scatter`.
 
 Matplotlib functions accept existing axes where documented. Its histogram
 overlay returns `(main_axes, ratio_axes)`; the second value is `None` when no
@@ -73,6 +73,13 @@ ratio is requested. Plotly functions return figures; `plot_scatter` accepts
 an existing figure and optional subplot row/column. Terminal functions
 return text. Ratio panels are histogram-only, require identical bin edges,
 and propagate uncertainties assuming independent inputs.
+
+`stack` adds nonnegative 1D count/yield histograms with identical edges, in
+input order. Both graphical backends share validation and accumulation in
+`plot/_stack.py`. Layer thicknesses are the original values; the optional
+total uncertainty is `sqrt(sum(variances))` for independent components.
+Profiles/efficiencies with spread bounds are rejected. Missing values leave
+gaps in the entire stack bin, and missing variances leave gaps in its total band.
 
 `HistogramStyle` controls one dataset. `StyleSet` combines a packaged palette
 with style templates. The [plotting guide](user-guide/plotting.md) and

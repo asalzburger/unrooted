@@ -7,6 +7,9 @@ Releases; no PyPI publication is implied by this version.
 
 ### Added
 
+- Matplotlib and Plotly `stack()` APIs and `HistogramStyle.as_stack()` for
+  nonnegative additive 1D histograms, with independent total uncertainties,
+  missing-bin gaps, executable examples, and installed-wheel coverage.
 - Installable palettes and logos, public scatter plotting/composition APIs,
   and Matplotlib, optional Plotly, and terminal workflows.
 - Entry selection, chunked ROOT branch loading, explicit scatter limits, and

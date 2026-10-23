@@ -46,13 +46,17 @@ I/O  →  Core  →  Plot
 
 ### Plot backends
 
-- **matplotlib** (`unrooted.plot.mpl`) — 1D/2D histograms, styled overlays, ratio panels
-- **Plotly** (`unrooted.plot.plotly`) — interactive browser plots
+- **matplotlib** (`unrooted.plot.mpl`) — 1D/2D histograms, overlays, stacks, ratio panels
+- **Plotly** (`unrooted.plot.plotly`) — interactive browser plots, including stacks
 - **terminal** (`unrooted.plot.terminal`) — ASCII rendering in the console
 
 Styling is controlled by `HistogramStyle` and `StyleSet`. The `odd` and `sd`
 palettes and logos are bundled in `unrooted/resources/` and installed with the
 package.
+
+Both graphical backends export `stack(...)` for nonnegative 1D count/yield
+histograms with identical bin edges and an optional independent total
+uncertainty band. See the [stacking example](docs/user-guide/plotting.md).
 
 ---
 

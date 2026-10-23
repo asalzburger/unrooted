@@ -26,6 +26,7 @@ class HistogramStyle:
     Prefer the named constructors over building this manually:
 
     * :meth:`as_hist`        — step fill + error bars (count histogram default)
+    * :meth:`as_stack`       — filled stack component + outline
     * :meth:`as_line`        — step line only, no fill, no errors
     * :meth:`as_markers`     — markers at bin centres + error bars
     * :meth:`as_efficiency`  — markers + error bars + spread band
@@ -68,6 +69,18 @@ class HistogramStyle:
     # ------------------------------------------------------------------
     # Named constructors
     # ------------------------------------------------------------------
+
+    @classmethod
+    def as_stack(cls, **overrides) -> HistogramStyle:
+        """Filled stack component with an outline; errors belong to the total."""
+        return cls(**{
+            "line_style": LineStyle.SOLID,
+            "fill_alpha": 0.8,
+            "marker": None,
+            "error_display": None,
+            "spread_display": None,
+            **overrides,
+        })
 
     @classmethod
     def as_hist(cls, **overrides) -> HistogramStyle:

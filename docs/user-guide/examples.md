@@ -6,7 +6,7 @@
     ensuring the examples always reflect the current state of the library.
     Terminal output is rendered from the same ROOT data at build time.
 
-The examples below use the **ODD** colour palette from
+The ROOT and boost examples below use the **ODD** colour palette from
 [`StyleSet`][unrooted.plot.style_set.StyleSet].  ROOT examples use
 [`unrooted.io.root`][unrooted.io.root.reader.load]; boost-histogram examples
 use [`unrooted.io.boost`][unrooted.io.boost.reader.load].  Both produce the
@@ -63,6 +63,28 @@ the same plot functions.
 
 ---
 
+## Stacked event yields
+
+Three synthetic count components in input order, with a total ±1σ band
+computed from independent Poisson variances. The [stacking guide](plotting.md)
+explains the statistical contract and how to reproduce both outputs.
+
+=== "Matplotlib"
+
+    ![Stacked event yields with total uncertainty](../assets/examples/mpl_stack.png)
+
+=== "Plotly (interactive)"
+
+    <iframe
+      src="../../assets/examples/plotly_stack.html"
+      width="100%"
+      height="500"
+      frameborder="0"
+      scrolling="no">
+    </iframe>
+
+---
+
 ## 2D histogram
 
 === "Matplotlib"
@@ -112,7 +134,8 @@ standard error. Wilson bounds retain nonzero width at zero and full acceptance.
 
 ## Named style presets
 
-All five presets applied to the same histogram with the ODD primary color.
+Five single-histogram presets applied to the same histogram with the ODD
+primary color. The stack example above uses `as_stack()`.
 
 ![Named style presets](../assets/examples/mpl_style_presets.png)
 

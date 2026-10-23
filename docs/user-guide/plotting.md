@@ -124,6 +124,55 @@ fig, ax = plt.subplots()
 overlay([h1, h2], ax=ax, labels=["h1", "h2"])
 ```
 
+### `stack()` — additive histogram components
+
+```python
+from unrooted.plot import HistogramStyle, StyleSet
+from unrooted.plot.mpl import stack
+
+ss = StyleSet.load("odd")
+styles = [HistogramStyle.as_stack().with_color(c) for c in ss.colors[:3]]
+ax = stack(
+    [background_a, background_b, signal],
+    labels=["Background A", "Background B", "Signal"],
+    styles=styles,
+)
+ax.set_ylabel("Events / bin")
+ax.figure.savefig("stack.png")
+```
+
+Components are drawn **bottom to top in input order**. All inputs must be 1D,
+have exactly identical bin edges, and contain nonnegative additive counts or
+yields. Weighted yields are supported when every bin is nonnegative. Profiles
+and efficiencies carrying spread bounds are rejected; do not stack averages,
+efficiencies, or other non-additive quantities. There is no automatic rebinning
+or normalization, and flow bins are omitted. Input arrays and styles are preserved.
+
+By default a gray band shows the total ± `sqrt(sum(variances))`, assuming
+**independent components**. It includes no covariance and is not clipped at
+zero. For yields 4 and 9 with variances 4 and 9, the total is 13 ± √13.
+Pass `uncertainty=False` to hide it. A NaN value in any component leaves a gap
+in every layer of that bin. A NaN variance leaves a gap only in the total band.
+
+`stack()` returns an `Axes` and accepts `ax=` for composition. `labels` and
+`styles`, when supplied, need one entry per component. The default
+`HistogramStyle.as_stack()` has a filled area and outline; the component's
+line and fill fields apply, while marker/error/spread fields do not. The total
+band is controlled by `uncertainty`. For palette colors, create `as_stack()`
+styles as above. Both backends support hatches `/`, `\`, `x`, `-`, `|`, `+`,
+and `.`; use hex/RGBA colors for consistent opacity across backends.
+
+![Three histogram components with an independent total uncertainty band](../assets/examples/mpl_stack.png)
+
+Reproduce this synthetic example from a contributor checkout:
+
+```bash
+uv run --no-sync python -I tests/examples/example_stacked_histogram.py /tmp/stack-example --plotly
+```
+
+Stacking is a Python API feature of Matplotlib and Plotly; the terminal backend
+and CLI do not provide stacking.
+
 ### Scatter plots
 
 ```python
@@ -258,6 +307,24 @@ With a ratio panel:
 fig = overlay([h1, h2], labels=["ref", "alt"], ratio=True)
 fig.show()
 ```
+
+### `stack()` — additive histogram components
+
+```python
+from unrooted.plot.plotly import stack
+
+fig = stack([background_a, background_b, signal],
+            labels=["Background A", "Background B", "Signal"])
+fig.write_html("stack.html")
+```
+
+The ordering, validation, styles, missing-bin behavior, and independent total
+uncertainty follow the Matplotlib stack contract above. Plotly returns a
+`Figure`; it does not take `ax=`. Legend clicks hide a component's drawing
+without changing the original cumulative heights or recomputing the total
+uncertainty. This preserves the other components' shapes, including gaps.
+
+[Open the interactive stacked histogram](../assets/examples/plotly_stack.html).
 
 ### Scatter plots
 
