@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 168">
+  <!-- Logo B icon: u-monogram as two histogram bars + connecting curve -->
+
+  <!-- U-connecting curve (drawn first, below the bars) -->
+  <!-- Centred on the bar midpoints: left bar centre x=29, right bar centre x=111 -->
+  <!-- Cubic bezier curves down to ~y=142, stroke width matches bar width (38) -->
+  <path d="M 29,112 C 29,152 111,152 111,112"
+        fill="none" stroke="#1A4F8A" stroke-width="38" stroke-linecap="butt"/>
+
+  <!-- Left bar – deep navy (taller) -->
+  <rect x="10" y="10" width="38" height="102" rx="2" fill="#1A4F8A"/>
+
+  <!-- Right bar – warm amber (shorter) -->
+  <rect x="92" y="33" width="38" height="79"  rx="2" fill="#E8921A"/>
+</svg>

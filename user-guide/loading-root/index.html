@@ -1,0 +1,1819 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Read, manipulate and visualise histograms from physics data formats — without ROOT">
+      
+      
+      
+        <link rel="canonical" href="https://asalzburger.github.io/unrooted/user-guide/loading-root/">
+      
+      
+        <link rel="prev" href="../../architecture/">
+      
+      
+        <link rel="next" href="../loading-boost/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo_b_icon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Loading ROOT Data - unrooted</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#loading-root-data" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="unrooted" class="md-header__button md-logo" aria-label="unrooted" data-md-component="logo">
+      
+  <img src="../../assets/logo_b_icon.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            unrooted
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Loading ROOT Data
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-hidden="true"  type="radio" name="__palette" id="__palette_0">
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/asalzburger/unrooted" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    asalzburger/unrooted
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../getting-started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../contributing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contributing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../releasing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Releases & Compatibility
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../architecture/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Architecture
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/core/" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="unrooted" class="md-nav__button md-logo" aria-label="unrooted" data-md-component="logo">
+      
+  <img src="../../assets/logo_b_icon.svg" alt="logo">
+
+    </a>
+    unrooted
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/asalzburger/unrooted" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    asalzburger/unrooted
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../releasing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Releases & Compatibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loading ROOT Data
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loading ROOT Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#root-histograms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ROOT histograms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ROOT histograms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-gets-loaded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What gets loaded
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tprofile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TProfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#efficiency-histograms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Efficiency histograms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ttree-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TTree branches
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TTree branches">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#count-histogram-one-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Count histogram (one branch)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entry-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entry selection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-histogram-two-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile histogram (two branches)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#supported-branch-pair-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported branch-pair types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chunking-and-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chunking and memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scatter-limits-and-sampling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scatter limits and sampling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reference-workload-measurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference workload measurements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../loading-boost/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loading boost-histogram Data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../histograms/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Histograms & Axes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plotting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plotting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../styling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Styles & Themes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command-line interface
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resources
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    I/O
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/plot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Plot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#root-histograms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ROOT histograms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ROOT histograms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-gets-loaded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What gets loaded
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tprofile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TProfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#efficiency-histograms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Efficiency histograms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ttree-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TTree branches
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TTree branches">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#count-histogram-one-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Count histogram (one branch)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entry-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entry selection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-histogram-two-branches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile histogram (two branches)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#supported-branch-pair-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supported branch-pair types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chunking-and-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chunking and memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scatter-limits-and-sampling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scatter limits and sampling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reference-workload-measurements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference workload measurements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="loading-root-data">Loading ROOT Data</h1>
+<h2 id="root-histograms">ROOT histograms</h2>
+<p>Use <code>load()</code> to read any <code>TH1</code>, <code>TH2</code>, or <code>TProfile</code> object directly from a
+ROOT file.  No ROOT installation is needed — <code>unrooted</code> uses
+<a href="https://uproot.readthedocs.io/">uproot</a> under the hood.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.io.root</span><span class="w"> </span><span class="kn">import</span> <span class="n">load</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">h</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s2">"analysis.root"</span><span class="p">,</span> <span class="s2">"hx"</span><span class="p">)</span>
+</code></pre></div>
+<p>The key can include or omit the ROOT cycle number:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">h</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s2">"analysis.root"</span><span class="p">,</span> <span class="s2">"hx"</span><span class="p">)</span>    <span class="c1"># cycle stripped automatically</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">h</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s2">"analysis.root"</span><span class="p">,</span> <span class="s2">"hx;1"</span><span class="p">)</span>  <span class="c1"># explicit cycle – same result</span>
+</code></pre></div>
+<h3 id="what-gets-loaded">What gets loaded</h3>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>h.values</code></td>
+<td>Bin contents as <code>np.ndarray</code></td>
+</tr>
+<tr>
+<td><code>h.variances</code></td>
+<td>Bin variances (<code>sumw2</code> if stored, else <code>values</code>)</td>
+</tr>
+<tr>
+<td><code>h.axes</code></td>
+<td>One <code>Axis</code> per dimension with edges and label</td>
+</tr>
+<tr>
+<td><code>h.overflow</code></td>
+<td>Full array including flow bins</td>
+</tr>
+<tr>
+<td><code>h.name</code></td>
+<td>Key string (cycle stripped)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tprofile">TProfile</h3>
+<p>When the loaded object is a <code>TProfile</code>, <code>load()</code> additionally populates:</p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>h.values</code></td>
+<td>Per-bin mean of the profiled quantity</td>
+</tr>
+<tr>
+<td><code>h.variances</code></td>
+<td>Per-bin squared standard error of the mean (SE²)</td>
+</tr>
+<tr>
+<td><code>h.spread_min</code></td>
+<td>Per-bin mean − σ_y (std-dev of profiled quantity)</td>
+</tr>
+<tr>
+<td><code>h.spread_max</code></td>
+<td>Per-bin mean + σ_y</td>
+</tr>
+</tbody>
+</table>
+<p>σ_y is derived as √(SE² × N) from the stored SE² and bin counts.
+Empty bins carry <code>nan</code> for the spread fields.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">hp</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="s2">"analysis.root"</span><span class="p">,</span> <span class="s2">"profX"</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># hp.values      → per-bin mean</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># hp.variances   → per-bin SE² (error bars via hp.errors)</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># hp.spread_min  → mean − σ_y  (spread band)</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># hp.spread_max  → mean + σ_y</span>
+</code></pre></div>
+<p>Plot with a spread band:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.plot.mpl</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.plot.style</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistogramStyle</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">style</span> <span class="o">=</span> <span class="n">HistogramStyle</span><span class="p">(</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">line_color</span><span class="o">=</span><span class="s2">"#1A4F8A"</span><span class="p">,</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">error_display</span><span class="o">=</span><span class="s2">"bar"</span><span class="p">,</span>    <span class="c1"># SE error bars</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">spread_display</span><span class="o">=</span><span class="s2">"band"</span><span class="p">,</span>  <span class="c1"># σ_y shaded band</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">)</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">plot</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="efficiency-histograms">Efficiency histograms</h2>
+<p>Direct <code>TEfficiency</code> loading is unsupported. Use
+<code>load_efficiency()</code> with a <strong>passed</strong> and a <strong>total</strong> <code>TH1</code> stored as
+separate keys — a common pattern in analysis frameworks:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.io.root</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_efficiency</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">eff</span> <span class="o">=</span> <span class="n">load_efficiency</span><span class="p">(</span><span class="s2">"analysis.root"</span><span class="p">,</span> <span class="s2">"h_passed"</span><span class="p">,</span> <span class="s2">"h_total"</span><span class="p">)</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eff.values</code></td>
+<td>Per-bin efficiency = passed / total</td>
+</tr>
+<tr>
+<td><code>eff.variances</code></td>
+<td>Per-bin binomial variance = eff × (1 − eff) / total</td>
+</tr>
+<tr>
+<td><code>eff.spread_min</code></td>
+<td>Lower Wilson interval bound</td>
+</tr>
+<tr>
+<td><code>eff.spread_max</code></td>
+<td>Upper Wilson interval bound</td>
+</tr>
+</tbody>
+</table>
+<p>The default confidence level is <code>0.6826894921370859</code> (68.27%, equivalent to
+the central Gaussian ±1σ probability). Pass <code>confidence_level=0.95</code> for 95%
+intervals. The method is the <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats._result_classes.BinomTestResult.proportion_ci.html">Wilson score interval without continuity
+correction</a>.
+It replaces the previous clamped Gaussian spread; the binomial variance field
+is unchanged. No additional statistical dependency is required.</p>
+<p>For <code>N &gt; 0</code>, <code>p = passed/N</code>, and the standard-normal quantile <code>z</code> at
+<code>(1 + confidence_level)/2</code>, the bounds are</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>center = (p + z²/(2N)) / (1 + z²/N)
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>radius = z * sqrt(p*(1-p)/N + z²/(4N²)) / (1 + z²/N)
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>bounds = center ± radius
+</code></pre></div>
+<p>Bounds lie in <code>[0, 1]</code> and retain nonzero width at zero and full acceptance.
+At the default confidence level, <code>0/4</code> has bounds <code>[0, 0.2]</code>, <code>2/4</code> has bounds
+approximately <code>[0.276393, 0.723607]</code>, and <code>4/4</code> has bounds <code>[0.8, 1]</code>.
+Bins where total = 0 carry <code>nan</code> for all four arrays; no inference is made
+from an empty bin.</p>
+<p><code>errors = sqrt(variances)</code> still describes the Gaussian binomial standard
+error and is zero at the endpoints. To show Wilson bounds, enable
+<code>spread_display</code>; changing the confidence level affects only the bounds.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.plot.mpl</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.plot.style</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistogramStyle</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">style</span> <span class="o">=</span> <span class="n">HistogramStyle</span><span class="p">(</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">line_color</span><span class="o">=</span><span class="s2">"#1A4F8A"</span><span class="p">,</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">marker</span><span class="o">=</span><span class="s2">"o"</span><span class="p">,</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">error_display</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">spread_display</span><span class="o">=</span><span class="s2">"band"</span><span class="p">,</span>  <span class="c1"># shaded Wilson interval</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="p">)</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">plot</span><span class="p">(</span><span class="n">eff</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">)</span>
+</code></pre></div>
+<p>Inputs must be one-dimensional TH1 count histograms with exactly identical
+edges. Counts must be finite, nonnegative integers, with passed ≤ total in
+every bin. Weighted and fractional efficiencies are unsupported. ROOT
+variances must match counts (relative tolerance <code>1e-12</code>); a stored <code>Sumw2</code>
+array with unit-weight Poisson variances is accepted. ROOT cannot always
+establish the history of weights from aggregated counts, so callers must
+supply unweighted event counts. Profiles and TH2 inputs are rejected.
+Invalid data or a confidence level outside <code>(0, 1)</code> raises <code>ValueError</code>.
+Flow bins are excluded from the efficiency calculation.</p>
+<hr />
+<h2 id="ttree-branches">TTree branches</h2>
+<p><code>load_branch()</code> reads one or two branches from a TTree and returns a histogram.</p>
+<h3 id="count-histogram-one-branch">Count histogram (one branch)</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.io.root</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_branch</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">h</span> <span class="o">=</span> <span class="n">load_branch</span><span class="p">(</span><span class="s2">"data.root"</span><span class="p">,</span> <span class="s2">"tree"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">)</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># → Histogram with 100 bins, range auto-detected from data</span>
+</code></pre></div>
+<p>Options:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">h</span> <span class="o">=</span> <span class="n">load_branch</span><span class="p">(</span><span class="s2">"data.root"</span><span class="p">,</span> <span class="s2">"tree"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>                <span class="n">n_bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>                <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">),</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>                <span class="n">label</span><span class="o">=</span><span class="s2">"x [mm]"</span><span class="p">)</span>
+</code></pre></div>
+<p>Count and profile histograms use bins <code>[left, right)</code>, with the final right
+edge included in the last bin. A value exactly on an internal edge belongs to
+the bin on its right. Values outside the specified range are omitted.</p>
+<h3 id="entry-selection">Entry selection</h3>
+<p>Both <code>load_branch()</code> and <code>load_scatter()</code> accept a half-open tree-entry slice:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.io.root</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_branch</span><span class="p">,</span> <span class="n">load_scatter</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">h</span> <span class="o">=</span> <span class="n">load_branch</span><span class="p">(</span><span class="s2">"data.root"</span><span class="p">,</span> <span class="s2">"tree"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span> <span class="n">entry_start</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">entry_stop</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">points</span> <span class="o">=</span> <span class="n">load_scatter</span><span class="p">(</span><span class="s2">"data.root"</span><span class="p">,</span> <span class="s2">"tree"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">,</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>                      <span class="n">entry_start</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">entry_stop</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+</code></pre></div>
+<p><code>entry_start</code> defaults to <code>0</code>; <code>entry_stop=None</code> reads through the end of the
+tree. Bounds must be nonnegative integers with stop ≥ start; bounds beyond
+the tree's length are clipped. Selection happens before broadcasting and
+flattening, so the bounds count events, not flattened points. All elements
+of a selected jagged event are included. Automatic histogram ranges use only
+the selected x values, before broadcasting. An empty selection needs an
+explicit histogram range; it returns an empty scatter without a range.</p>
+<h3 id="profile-histogram-two-branches">Profile histogram (two branches)</h3>
+<p>Provide <code>y_branch</code> to profile <code>y</code> values against <code>x</code>-axis bins.
+Each x-bin stores the mean, standard error, and min/max of the
+corresponding <code>y</code> values.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">hp</span> <span class="o">=</span> <span class="n">load_branch</span><span class="p">(</span><span class="s2">"data.root"</span><span class="p">,</span> <span class="s2">"tree"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">)</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># hp.values     → per-bin mean of y</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># hp.variances  → per-bin SE² of mean</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># hp.spread_min → per-bin minimum of y</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="c1"># hp.spread_max → per-bin maximum of y</span>
+</code></pre></div>
+<p>For a bin with <code>N &gt; 0</code> observations, define
+<code>M2 = sum((y - mean(y))**2)</code>. Branch profiles use the <strong>population convention</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>values    = mean(y)
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>variances = M2 / N²
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>errors    = sqrt(variances)
+</code></pre></div>
+<p>This is the population variance of the observations divided by <code>N</code>; it does
+not apply the sample correction <code>N / (N - 1)</code>. For observations <code>[1, 3]</code>, the
+mean is <code>2</code>, the variance of the mean is <code>0.5</code>, and the spread bounds are
+<code>[1, 3]</code>. The calculation centers values within each bin before accumulating
+squared deviations, avoiding cancellation from a large common offset.</p>
+<table>
+<thead>
+<tr>
+<th>Entries in a bin</th>
+<th>Value</th>
+<th>Variance</th>
+<th>Spread bounds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>0</code></td>
+<td><code>0</code></td>
+<td>both <code>nan</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>observed value</td>
+<td><code>0</code></td>
+<td>both equal to the observation</td>
+</tr>
+<tr>
+<td>2 or more</td>
+<td>mean</td>
+<td><code>M2 / N²</code></td>
+<td>observed minimum and maximum</td>
+</tr>
+</tbody>
+</table>
+<p>The zero variance for a single observation preserves the existing convention;
+it does not establish that the underlying distribution has no uncertainty.
+An entirely empty tree can be loaded with an explicit <code>range=(lo, hi)</code>;
+automatic range detection needs at least one x-value.</p>
+<p>The <a href="../loading-boost/#profile-histograms-mean-storage">boost-histogram Mean reader</a>
+retains its sample-corrected variance <code>M2 / (N * (N - 1))</code> for <code>N &gt;= 2</code> and
+mean ± standard deviation spread. Those uncertainty and spread definitions
+differ from branch profiles even when the means and binning agree.</p>
+<h3 id="supported-branch-pair-types">Supported branch-pair types</h3>
+<p><code>load_branch()</code> uses <code>awkward.broadcast_arrays</code> to align the two branches,
+supporting all common branch-shape combinations:</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>x type</th>
+<th>y type</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>scalar</td>
+<td>scalar</td>
+<td>event-by-event pairing</td>
+</tr>
+<tr>
+<td>2</td>
+<td>scalar</td>
+<td><code>std::vector&lt;T&gt;</code></td>
+<td>x broadcast to every y element per event</td>
+</tr>
+<tr>
+<td>3</td>
+<td>scalar</td>
+<td><code>std::vector&lt;std::vector&lt;T&gt;&gt;</code></td>
+<td>x broadcast after full flattening</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>std::vector&lt;T&gt;</code></td>
+<td><code>std::vector&lt;T&gt;</code> (same shape)</td>
+<td>element-by-element zip</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>std::vector&lt;T&gt;</code></td>
+<td><code>std::vector&lt;std::vector&lt;T&gt;&gt;</code></td>
+<td>outer lengths must match</td>
+</tr>
+</tbody>
+</table>
+<p>Scalar, <code>std::vector&lt;T&gt;</code>, and <code>std::vector&lt;std::vector&lt;T&gt;&gt;</code> branches all work
+for count histograms too — they are fully flattened before binning.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Incompatible branch shapes (e.g. different outer lengths) raise a
+<code>ValueError</code> from awkward-array.</p>
+</div>
+<h3 id="chunking-and-memory">Chunking and memory</h3>
+<p>Branch readers process at most <code>step_size=100_000</code> tree entries per chunk.
+Set a smaller positive integer to reduce temporary array sizes. Entry counts
+are measured before broadcasting/flattening: one jagged event may contain
+many points, and ROOT baskets also contribute memory. <code>step_size</code> is an
+entry limit, not a hard limit on process RAM.</p>
+<p>Count histograms accumulate one chunk at a time. Profiles use three passes
+over the selection: extrema/counts, sums relative to a common per-bin origin,
+and centered squared deviations. The extra I/O retains the population
+estimator and large-offset stability while keeping working arrays bounded
+by the chunk and bin count. Automatic range detection adds an x-only pass;
+provide <code>range=(lo, hi)</code> to avoid that scan. Interpreted arrays are not cached
+between passes.</p>
+<p>For count/profile output, result memory depends on the number of bins.
+Scatter output without <code>max_points</code> retains every selected pair, so its result
+memory still grows with the selection. Use an explicit limit when that result
+must be bounded.</p>
+<h3 id="scatter-limits-and-sampling">Scatter limits and sampling</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">unrooted.io.root</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_scatter</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># A guard: raise ValueError if the selection exceeds 100,000 flattened pairs.</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">points</span> <span class="o">=</span> <span class="n">load_scatter</span><span class="p">(</span><span class="s2">"data.root"</span><span class="p">,</span> <span class="s2">"tree"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">,</span> <span class="n">max_points</span><span class="o">=</span><span class="mi">100_000</span><span class="p">)</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># An explicit uniform sample without replacement, with a reproducible seed.</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="n">sample</span> <span class="o">=</span> <span class="n">load_scatter</span><span class="p">(</span><span class="s2">"data.root"</span><span class="p">,</span> <span class="s2">"tree"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">,</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>                      <span class="n">max_points</span><span class="o">=</span><span class="mi">100_000</span><span class="p">,</span> <span class="n">sampling</span><span class="o">=</span><span class="s2">"random"</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">71</span><span class="p">,</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>                      <span class="n">step_size</span><span class="o">=</span><span class="mi">100_000</span><span class="p">)</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="n">sample</span><span class="o">.</span><span class="n">source_points</span><span class="p">,</span> <span class="n">sample</span><span class="o">.</span><span class="n">sampled</span><span class="p">,</span> <span class="n">sample</span><span class="o">.</span><span class="n">sample_seed</span><span class="p">)</span>
+</code></pre></div>
+<p>The default <code>max_points=None</code> returns all pairs. Setting a limit defaults to
+<code>sampling="error"</code>; it never silently truncates. <code>sampling="random"</code> requires
+a positive limit and uses seed <code>0</code> by default. A limit at or above the selected
+pair count returns all pairs.</p>
+<p>Sampling is uniform over flattened <code>(x, y)</code> pairs, including NaN gaps, rather
+than over events. High-multiplicity events contribute more pairs. Coordinates
+stay paired, selected points retain their original order, and the same
+input/selection, seed, and software versions give the same sample across
+chunk sizes. <code>source_points</code> records the selected flattened count;
+<code>sampled</code> is true only when fewer pairs were retained. <code>sample_seed</code> records
+the requested random seed. Working memory is proportional to a chunk plus
+the retained limit; the complete source selection is still scanned.</p>
+<h3 id="reference-workload-measurements">Reference workload measurements</h3>
+<p>The Stage 5 target is 10 million flattened observations per histogram/profile,
+under 1 GiB peak process RAM and 30 seconds per load on the local reference
+workload. Scatter sampling is explicitly requested, with 100,000 retained
+points in the reference run. These targets are measured on synthetic local
+ROOT data, rather than a universal limit for every file or machine.</p>
+<p>On arm64 macOS / Python 3.14.6, using 100 bins, an explicit range, and three
+fresh worker processes per case:</p>
+<table>
+<thead>
+<tr>
+<th>10-million-observation case</th>
+<th>Whole-branch median load</th>
+<th>Chunked median load</th>
+<th>Whole-branch peak RAM</th>
+<th>Chunked peak RAM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scalar count</td>
+<td>0.468 s</td>
+<td>0.534 s</td>
+<td>262.5 MiB</td>
+<td>74.0 MiB</td>
+</tr>
+<tr>
+<td>Jagged count</td>
+<td>0.484 s</td>
+<td>0.490 s</td>
+<td>281.1 MiB</td>
+<td>106.9 MiB</td>
+</tr>
+<tr>
+<td>Scalar profile</td>
+<td>0.834 s</td>
+<td>2.352 s</td>
+<td>820.0 MiB</td>
+<td>104.7 MiB</td>
+</tr>
+<tr>
+<td>Jagged profile</td>
+<td>0.865 s</td>
+<td>2.315 s</td>
+<td>877.4 MiB</td>
+<td>238.3 MiB</td>
+</tr>
+</tbody>
+</table>
+<p>The jagged fixture has 10 observations per event. Profiles trade additional
+passes for lower memory while staying within the agreed time budget.
+Sampling 100,000 pairs from 10 million took median 0.52–0.61 s and at most
+251.4 MiB during loading; self-contained Plotly HTML was 7.0 MiB. Rendering
+raised peak process RAM to at most 318.7 MiB for that sampled workload.</p>
+<p>Reproduce from the source checkout (with development/Plotly dependencies):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-I<span class="w"> </span>benchmarks/root_loading.py<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span>--workdir<span class="w"> </span>/tmp/unrooted-benchmark<span class="w"> </span>--observations<span class="w"> </span><span class="m">10000000</span><span class="w"> </span>--repeat<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span>--step-size<span class="w"> </span><span class="m">100000</span><span class="w"> </span>--max-points<span class="w"> </span><span class="m">100000</span><span class="w"> </span>--render<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span>--report<span class="w"> </span>/tmp/unrooted-benchmark/report.json
+</code></pre></div>
+<p>Add <code>--auto-range</code> to include the preliminary range scan. The benchmark
+generates seeded scalar/jagged fixtures and runs each load/export in a fresh
+subprocess. Reports record dependency versions, input and reader hashes,
+load/render time, result/output size, and peak RSS. Fixture generation is
+excluded; filesystem caches are not cleared. Peak values include interpreter
+and library memory. Raw before/after reports are in <code>benchmarks/results/</code>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "content.code.copy", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
