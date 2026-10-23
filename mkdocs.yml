@@ -39,6 +39,8 @@ plugins:
           options:
             show_source: true
             show_root_heading: true
+            show_root_full_path: false
+            separate_signature: true
             heading_level: 2
             members_order: source
             docstring_style: google
@@ -58,6 +60,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Contributing: contributing.md
+  - Releases & Compatibility: releasing.md
   - Architecture: architecture.md
   - User Guide:
     - Loading ROOT Data: user-guide/loading-root.md

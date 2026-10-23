@@ -10,6 +10,7 @@ import os
 import subprocess
 import sys
 from contextlib import chdir
+from importlib.metadata import metadata, version
 from importlib.resources import files
 from importlib.util import find_spec
 from pathlib import Path
@@ -24,6 +25,12 @@ def main() -> None:
     assert package_path.is_relative_to(Path(sys.prefix).resolve()), (
         f"Expected an installed wheel, imported {package_path}"
     )
+    assert unrooted.__version__ == version("unrooted")
+    package_metadata = metadata("unrooted")
+    assert package_metadata["License-Expression"] == "MIT"
+    assert package_metadata["License-File"] == "LICENSE"
+    assert package_metadata["Summary"]
+    assert package_metadata["Maintainer"]
 
     with TemporaryDirectory(prefix="unrooted-wheel-") as directory:
         workdir = Path(directory)

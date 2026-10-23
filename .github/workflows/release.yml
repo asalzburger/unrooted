@@ -1,0 +1,161 @@
+name: Release candidate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      prepare_draft:
+        description: Prepare a GitHub draft release after validation (run on an existing version tag)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  MPLBACKEND: Agg
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        with:
+          version: "0.13.5"
+          python-version: "3.11"
+          enable-cache: true
+      - run: uv sync --locked --group docs --extra plotly
+      - name: Lint and type check
+        run: |
+          uv run --no-sync ruff check .
+          uv run --no-sync python -I -m pyright
+      - name: Build wheel from source distribution
+        run: |
+          uv build --no-build-isolation --sdist --out-dir dist
+          uv build --no-build-isolation --wheel dist/*.tar.gz --out-dir dist
+      - name: Validate candidate contents and generate checksums and notes
+        run: |
+          uv run --no-sync python -I tools/release/validate.py dist --checksums --notes dist/RELEASE_NOTES.md
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            uv run --no-sync python -I tools/release/validate.py dist --tag "$GITHUB_REF_NAME"
+          fi
+      - name: Record candidate version
+        id: version
+        run: |
+          version=$(uv run --no-sync python -I -c 'import unrooted; print(unrooted.__version__)')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Build and check documentation
+        run: |
+          uv run --no-sync python -I -m mkdocs build --strict --site-dir "$RUNNER_TEMP/site"
+          uv run --no-sync python -I tests/documentation/links.py "$RUNNER_TEMP/site"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate
+          path: dist/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-documentation
+          path: ${{ runner.temp }}/site/
+          if-no-files-found: error
+      - name: Check working tree
+        run: test -z "$(git status --porcelain)"
+
+  rehearsal:
+    needs: build
+    name: installed candidate (${{ matrix.os }}, Python ${{ matrix.python }}, ${{ matrix.backend }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python: "3.11", backend: base}
+          - {os: ubuntu-latest, python: "3.12", backend: plotly}
+          - {os: ubuntu-latest, python: "3.13", backend: plotly}
+          - {os: ubuntu-latest, python: "3.14", backend: plotly}
+          - {os: ubuntu-latest, python: "3.15", backend: plotly}
+          - {os: macos-latest, python: "3.11", backend: plotly}
+          - {os: macos-latest, python: "3.15", backend: base}
+          - {os: ubuntu-latest, python: "3.11", backend: minimum}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: candidate
+          path: dist
+      - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
+        with:
+          version: "0.13.5"
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          cache-suffix: candidate-${{ matrix.os }}-${{ matrix.python }}-${{ matrix.backend }}
+      - name: Install locked test tools and dependencies
+        env:
+          BACKEND: ${{ matrix.backend }}
+        run: |
+          if [[ "$BACKEND" == plotly ]]; then
+            uv sync --locked --extra plotly
+          else
+            uv sync --locked
+          fi
+      - name: Install the candidate wheel instead of the editable checkout
+        run: uv pip install --python .venv/bin/python --no-deps --reinstall dist/*.whl
+      - name: Install minimum runtime versions with Plotly
+        if: matrix.backend == 'minimum'
+        run: |
+          wheel=$(find dist -name '*.whl')
+          uv pip install --python .venv/bin/python --resolution lowest-direct --upgrade "${wheel}[plotly]"
+      - name: Confirm base installation has no Plotly
+        if: matrix.backend == 'base'
+        run: .venv/bin/python -I -c "import importlib.util; assert importlib.util.find_spec('plotly') is None"
+      - name: Validate downloaded artifacts
+        run: .venv/bin/python -I tools/release/validate.py dist
+      - name: Exercise installed API, CLI, metadata, and resources outside checkout
+        working-directory: ${{ runner.temp }}
+        run: '"$GITHUB_WORKSPACE/.venv/bin/python" -I "$GITHUB_WORKSPACE/tests/packaging/smoke.py"'
+      - name: Run regression suite against installed package
+        run: .venv/bin/python -I -m pytest --import-mode=importlib -q
+      - name: Run documented workflows against installed package
+        if: matrix.backend != 'base'
+        working-directory: ${{ runner.temp }}
+        run: '"$GITHUB_WORKSPACE/.venv/bin/python" -I "$GITHUB_WORKSPACE/tests/documentation/smoke.py" --installed'
+      - name: Check working tree
+        run: test -z "$(git status --porcelain)"
+
+  draft:
+    needs: [build, rehearsal]
+    if: github.event_name == 'workflow_dispatch' && inputs.prepare_draft
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Require an existing matching version tag
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: test "$GITHUB_REF" = "refs/tags/v$VERSION"
+      - uses: actions/download-artifact@v4
+        with:
+          name: candidate
+          path: dist
+      - name: Prepare draft from the exact validated artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          flags=()
+          if [[ "$VERSION" =~ (a|b|rc|dev) ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "v$VERSION" dist/*.whl dist/*.tar.gz dist/SHA256SUMS \
+            --verify-tag --draft "${flags[@]}" --title "unrooted $VERSION" \
+            --notes-file dist/RELEASE_NOTES.md

@@ -128,6 +128,11 @@ requires the additional setup described in the [CLI guide](user-guide/cli.md).
 
 ## Changes and pull requests
 
+The [release guide](releasing.md) defines versioning, compatibility promises,
+candidate validation, and the separate publication procedure. The candidate
+workflow also runs the suite against the installed wheel across the support
+matrix, checks distribution metadata/assets, and validates generated links.
+
 Use `feat-<topic>`, `fix-<topic>`, or `chore-<topic>` branches. Keep numerical
 references and user-facing documentation with behavior changes. Preserve
 the I/O → core → plotting separation, and use public APIs in examples.

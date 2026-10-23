@@ -3,7 +3,16 @@
 [![CI](https://github.com/asalzburger/unrooted/actions/workflows/ci.yml/badge.svg)](https://github.com/asalzburger/unrooted/actions/workflows/ci.yml)
 [![docs](https://github.com/asalzburger/unrooted/actions/workflows/docs.yml/badge.svg)](https://github.com/asalzburger/unrooted/actions/workflows/docs.yml)
 
-A Python library for loading, representing, and visualising histograms from HEP data formats.
+A Python library for loading, representing, and visualising histograms and
+point clouds from HEP data formats, without a C++ ROOT installation.
+
+**Release candidate:** `0.1.0rc1` · **License:** [MIT](LICENSE) ·
+**Maintainer:** Andreas Salzburger
+
+See the [release notes](CHANGELOG.md) and
+[support and compatibility policy](docs/releasing.md). Candidate preparation
+does not imply publication; GitHub Releases is the initial destination and
+PyPI publication is deferred.
 
 **Documentation:** https://asalzburger.github.io/unrooted/
 
@@ -19,7 +28,7 @@ I/O  →  Core  →  Plot
 
 | Layer | Package | Description |
 |-------|---------|-------------|
-| **I/O** | `unrooted.io.root` | Reads ROOT files via uproot; returns histograms or point clouds |
+| **I/O** | `unrooted.io.root`, `unrooted.io.boost` | Reads ROOT files or boost-histogram objects; returns histograms or point clouds |
 | **Core** | `unrooted.core` | `Axis`, `Histogram`, and `ScatterData` NumPy-backed dataclasses |
 | **Plot** | `unrooted.plot` | Matplotlib, Plotly, and terminal backends |
 
