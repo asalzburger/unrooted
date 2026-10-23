@@ -223,3 +223,61 @@ def test_plot_root_hxy_2d():
     h = load(DATA_DIR / "tests_input.root", "hxy")
     fig = plot(h)
     assert isinstance(fig.data[0], go.Heatmap)
+
+
+@pytest.mark.parametrize("display", ["band", "continuous"])
+@pytest.mark.parametrize("kind", ["error", "spread"])
+def test_uncertainty_bands_do_not_bridge_missing_bins(display, kind):
+    values = np.array([np.nan, 2, 3, np.nan, 4, 5, np.nan])
+    hist = Histogram(
+        [Axis(np.arange(8.0))],
+        values,
+        np.ones(7),
+        spread_min=values - 0.5,
+        spread_max=values + 0.5,
+    )
+    style = HistogramStyle(
+        line_style=None,
+        marker=None,
+        fill_alpha=None,
+        error_display=display if kind == "error" else None,
+        spread_display=display if kind == "spread" else None,
+    )
+    fig = plot(hist, style=style)
+    fills = [i for i, trace in enumerate(fig.data) if trace.fill == "tonexty"]
+    assert len(fills) == 2
+    expected = [(1, 3), (4, 6)] if display == "band" else [(1.5, 2.5), (4.5, 5.5)]
+    for index, (left, right) in zip(fills, expected):
+        upper, lower = fig.data[index - 1], fig.data[index]
+        np.testing.assert_array_equal(upper.x, lower.x)
+        assert (min(lower.x), max(lower.x)) == (left, right)
+        assert np.all(np.isfinite(lower.y)) and np.all(np.isfinite(upper.y))
+        np.testing.assert_allclose(
+            np.asarray(upper.y) - lower.y,
+            2 if kind == "error" else 1,
+        )
+
+
+@pytest.mark.parametrize("display", ["band", "continuous"])
+def test_all_missing_uncertainty_has_no_fill(display):
+    fig = plot(_hist([np.nan, np.nan]), style=HistogramStyle(error_display=display))
+    assert not any(trace.fill == "tonexty" for trace in fig.data)
+
+
+@pytest.mark.parametrize("display", ["band", "continuous"])
+def test_ratio_uncertainty_does_not_bridge_zero_denominator(display):
+    from unrooted.plot.plotly import overlay
+
+    fig = overlay(
+        [_hist([2, 3, 0, 4, 5]), _hist([3, 4, 1, 5, 6])],
+        ratio=True,
+        styles=[
+            HistogramStyle(error_display=None),
+            HistogramStyle(error_display=display),
+        ],
+    )
+    fills = [
+        trace for trace in fig.data if trace.fill == "tonexty" and trace.yaxis == "y2"
+    ]
+    assert len(fills) == 2
+    assert max(fills[0].x) <= 2 and min(fills[1].x) >= 3

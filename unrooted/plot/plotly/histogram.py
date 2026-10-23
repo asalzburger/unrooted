@@ -225,57 +225,23 @@ def _add_1d_traces(
         error_color = style.error_color if style.error_color is not None else color
         _, y_hi = _staircase(edges, values + errors)
         _, y_lo = _staircase(edges, values - errors)
-        # Upper boundary (invisible line — required so fill='tonexty' has a target)
-        fig.add_trace(
-            go.Scatter(
-                x=x_step,
-                y=y_hi,
-                mode="lines",
-                line=dict(width=0),
-                showlegend=False,
-                hoverinfo="skip",
-            ),
-            **add_kw,
-        )
-        # Lower boundary, filled up to the previous trace
-        fig.add_trace(
-            go.Scatter(
-                x=x_step,
-                y=y_lo,
-                mode="lines",
-                line=dict(width=0),
-                fill="tonexty",
-                fillcolor=_to_rgba(error_color, style.error_alpha),
-                showlegend=False,
-                hoverinfo="skip",
-            ),
-            **add_kw,
+        _add_band_traces(
+            fig,
+            x_step,
+            y_lo,
+            y_hi,
+            _to_rgba(error_color, style.error_alpha),
+            add_kw,
         )
     elif style.error_display == "continuous":
         error_color = style.error_color if style.error_color is not None else color
-        fig.add_trace(
-            go.Scatter(
-                x=centers,
-                y=values + errors,
-                mode="lines",
-                line=dict(width=0),
-                showlegend=False,
-                hoverinfo="skip",
-            ),
-            **add_kw,
-        )
-        fig.add_trace(
-            go.Scatter(
-                x=centers,
-                y=values - errors,
-                mode="lines",
-                line=dict(width=0),
-                fill="tonexty",
-                fillcolor=_to_rgba(error_color, style.error_alpha),
-                showlegend=False,
-                hoverinfo="skip",
-            ),
-            **add_kw,
+        _add_band_traces(
+            fig,
+            centers,
+            values - errors,
+            values + errors,
+            _to_rgba(error_color, style.error_alpha),
+            add_kw,
         )
 
     # 5. Spread display
@@ -309,55 +275,64 @@ def _add_1d_traces(
         elif style.spread_display == "band":
             _, y_hi_s = _staircase(edges, hist.spread_max)
             _, y_lo_s = _staircase(edges, hist.spread_min)
-            fig.add_trace(
-                go.Scatter(
-                    x=x_step,
-                    y=y_hi_s,
-                    mode="lines",
-                    line=dict(width=0),
-                    showlegend=False,
-                    hoverinfo="skip",
-                ),
-                **add_kw,
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=x_step,
-                    y=y_lo_s,
-                    mode="lines",
-                    line=dict(width=0),
-                    fill="tonexty",
-                    fillcolor=_to_rgba(spread_color, style.spread_alpha),
-                    showlegend=False,
-                    hoverinfo="skip",
-                ),
-                **add_kw,
+            _add_band_traces(
+                fig,
+                x_step,
+                y_lo_s,
+                y_hi_s,
+                _to_rgba(spread_color, style.spread_alpha),
+                add_kw,
             )
         else:  # continuous
-            fig.add_trace(
-                go.Scatter(
-                    x=centers,
-                    y=hist.spread_max,
-                    mode="lines",
-                    line=dict(width=0),
-                    showlegend=False,
-                    hoverinfo="skip",
-                ),
-                **add_kw,
+            _add_band_traces(
+                fig,
+                centers,
+                hist.spread_min,
+                hist.spread_max,
+                _to_rgba(spread_color, style.spread_alpha),
+                add_kw,
             )
-            fig.add_trace(
-                go.Scatter(
-                    x=centers,
-                    y=hist.spread_min,
-                    mode="lines",
-                    line=dict(width=0),
-                    fill="tonexty",
-                    fillcolor=_to_rgba(spread_color, style.spread_alpha),
-                    showlegend=False,
-                    hoverinfo="skip",
-                ),
-                **add_kw,
-            )
+
+
+def _add_band_traces(
+    fig: go.Figure,
+    x: np.ndarray,
+    lower: np.ndarray,
+    upper: np.ndarray,
+    fillcolor: str,
+    add_kw: dict,
+) -> None:
+    """Fill each finite run separately so Plotly cannot bridge missing bins."""
+    valid = np.isfinite(lower) & np.isfinite(upper)
+    boundaries = np.flatnonzero(np.diff(np.r_[False, valid, False]))
+    for start, stop in boundaries.reshape(-1, 2):
+        segment = slice(start, stop)
+        # tonexty joins whole traces even when their lines contain NaN gaps.
+        # Each run therefore needs its own adjacent upper/lower trace pair.
+        fig.add_trace(
+            go.Scatter(
+                x=x[segment],
+                y=upper[segment],
+                mode="lines",
+                line=dict(width=0),
+                showlegend=False,
+                hoverinfo="skip",
+            ),
+            **add_kw,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=x[segment],
+                y=lower[segment],
+                mode="lines",
+                line=dict(width=0),
+                fill="tonexty",
+                fillcolor=fillcolor,
+                showlegend=False,
+                hoverinfo="skip",
+            ),
+            **add_kw,
+        )
 
 
 def _add_2d_trace(fig: go.Figure, hist: Histogram) -> None:

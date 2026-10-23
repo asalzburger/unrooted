@@ -18,6 +18,8 @@ Releases; no PyPI publication is implied by this version.
 
 ### Corrected
 
+- Plotly uncertainty bands split at missing values, including zero-denominator
+  ratio bins, instead of drawing misleading filled polygons across gaps.
 - Profile binning includes the final right edge. Branch profile variance uses
   stable centered accumulation instead of subtracting large second moments.
 - Packaged resources work outside the checkout; generated previews go to a

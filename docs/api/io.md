@@ -18,21 +18,37 @@ are unsupported. Branch readers accept numeric scalars, vectors, and nested
 jagged arrays; paired branches must be broadcast-compatible.
 See [selection and memory behavior](../user-guide/loading-root.md).
 
-### load
+<span id="load"></span>
 
 ::: unrooted.io.root.reader.load
+    options:
+      heading_level: 3
+      heading: load
+      toc_label: load
 
-### load_efficiency
+<span id="load_efficiency"></span>
 
 ::: unrooted.io.root.reader.load_efficiency
+    options:
+      heading_level: 3
+      heading: load_efficiency
+      toc_label: load_efficiency
 
-### load_branch
+<span id="load_branch"></span>
 
 ::: unrooted.io.root.tree.load_branch
+    options:
+      heading_level: 3
+      heading: load_branch
+      toc_label: load_branch
 
-### load_scatter
+<span id="load_scatter"></span>
 
 ::: unrooted.io.root.tree.load_scatter
+    options:
+      heading_level: 3
+      heading: load_scatter
+      toc_label: load_scatter
 
 ---
 
@@ -47,10 +63,18 @@ Weight, and Mean; efficiency conversion accepts only unweighted counts.
 Categorical/Boolean axes and WeightedMean are rejected. See the
 [storage table](../user-guide/loading-boost.md).
 
-### load
+<span id="load_1"></span>
 
 ::: unrooted.io.boost.reader.load
+    options:
+      heading_level: 3
+      heading: load
+      toc_label: load
 
-### load_efficiency
+<span id="load_efficiency_1"></span>
 
 ::: unrooted.io.boost.reader.load_efficiency
+    options:
+      heading_level: 3
+      heading: load_efficiency
+      toc_label: load_efficiency
