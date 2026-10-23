@@ -7,6 +7,7 @@ Only browser display is intercepted; loading, plotting, and export run normally.
 
 from __future__ import annotations
 
+import argparse
 import io
 import os
 import pickle
@@ -23,6 +24,16 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--installed", action="store_true")
+    args = parser.parse_args()
+    if args.installed:
+        import unrooted
+
+        package_path = Path(unrooted.__file__).resolve()
+        assert package_path.is_relative_to(Path(sys.prefix).resolve()), (
+            f"Expected an installed wheel, imported {package_path}"
+        )
     with TemporaryDirectory(prefix="unrooted-doc-examples-") as directory:
         workdir = Path(directory)
         os.environ["MPLBACKEND"] = "Agg"

@@ -1,168 +1,103 @@
 # Architecture
 
-## Philosophy
+unrooted converts ROOT files and boost-histogram objects into NumPy-backed
+data, then renders that data with independent plotting backends. ROOT I/O
+uses Uproot; no C++ ROOT installation is required.
 
-`unrooted` exists because particle physics data lives in ROOT files and
-[`boost-histogram`](https://boost-histogram.readthedocs.io/) objects, but
-consuming either format traditionally requires a heavy C++ ROOT installation or
-tight coupling to a specific analysis framework.
-
-`unrooted` breaks that coupling: it converts both sources into a single
-numpy-backed `Histogram` object that slots directly into the scientific Python
-ecosystem, then lets you plot it with whichever backend fits your workflow.
-
-```
-ROOT file (.root)        boost_histogram objects
-       │                         │
-       ▼  unrooted.io.root       ▼  unrooted.io.boost
-┌──────────────────────────────────────────────────────┐
-│                 Histogram  /  Axis                   │  ←  unrooted.core
-└──────────────────────────────────────────────────────┘
-                        │
-          ┌─────────────┼─────────────┐
-          ▼             ▼             ▼
-  unrooted.plot.mpl  unrooted.plot.plotly  unrooted.plot.terminal
-  matplotlib Axes    plotly Figure         str
-  (publication)      (interactive)         (headless / CI)
+```text
+ROOT histograms / branches         boost-histogram objects
+             │                              │
+     unrooted.io.root                unrooted.io.boost
+             └──────────────┬───────────────┘
+                            ▼
+       unrooted.core: Axis / Histogram / ScatterData
+                            │
+             ┌──────────────┼───────────────┐
+             ▼              ▼               ▼
+         plot.mpl       plot.plotly     plot.terminal
+       Matplotlib Axes  Plotly Figure       str
+       hist + scatter   hist + scatter  histograms only
 ```
 
----
+## Data contracts
 
-## Design principles
+`Histogram` contains axes, values, variances, optional flow values, and
+optional lower/upper spread bounds. Readers return independent snapshots;
+directly constructed objects may share the supplied arrays. Arrays are
+mutable, and public consumers validate them again. See the
+[data contracts](user-guide/histograms.md) for shapes, NaNs, and ownership.
 
-**No ROOT dependency.**
-File I/O is delegated entirely to [uproot](https://uproot.readthedocs.io/).
-`uproot` is a pure-Python ROOT reader; no C++ ROOT installation is required.
+The interpretation of uncertainty depends on the reader:
 
-**numpy-first.**
-Every histogram is backed by `np.ndarray`.  The `Histogram` object is a thin
-dataclass wrapper — no magic, no hidden state.  You can always reach into
-`.values` and `.variances` directly.
+| Input | Values | Variances | Spread bounds |
+| --- | --- | --- | --- |
+| Count histogram | Counts or weighted sums | Count/weight variance | None |
+| ROOT TProfile | Mean | Squared standard error from Uproot | Mean ± reconstructed standard deviation |
+| Branch profile | Mean | Population variance / count | Observed minimum and maximum |
+| Boost Mean | Mean | Sample variance / count | Mean ± sample standard deviation |
+| Efficiency | Passed / total | Binomial variance | Wilson confidence interval |
 
-**One representation layer.**
-Both I/O backends produce the same `Histogram` type.  A histogram loaded from a
-ROOT `TProfile` and one converted from a `boost_histogram.Histogram` with `Mean`
-storage are structurally identical and can be passed to the same plot functions.
+`ScatterData` holds equally sized, flat real `x`/`y` arrays and labels.
+`source_points`, `sample_seed`, and `sampled` record optional sampling.
+Selection happens on tree entries before broadcasting and flattening paired
+branches. Without `max_points`, all selected pairs are retained. With
+`sampling="random"`, a seeded uniform sample without replacement preserves
+pairing and input order. The [ROOT guide](user-guide/loading-root.md) explains
+chunking, multi-pass profiles, and memory limits.
 
-**Separate concerns.**
-I/O, the data model, and plotting are independent layers.  Adding a new I/O
-backend or a new plot backend only requires implementing the small interface of
-that layer, with no changes elsewhere.
+## Supported input paths
 
-**Composable styling.**
-`HistogramStyle` covers a single histogram; `StyleSet` coordinates a four-color
-palette for a full overlay.  Styles are plain dataclasses — easy to construct,
-copy, or override.
+| Public reader | Input | Output |
+| --- | --- | --- |
+| `unrooted.io.root.load` | TH1, TH2, TProfile | `Histogram` |
+| `unrooted.io.root.load_efficiency` | Separate unweighted passed/total TH1 objects | `Histogram` |
+| `unrooted.io.root.load_branch` | Numeric scalar, vector, or nested jagged branches | Count/profile `Histogram` |
+| `unrooted.io.root.load_scatter` | Two broadcast-compatible numeric branches | `ScatterData` |
+| `unrooted.io.boost.load` | Numeric Regular/Variable/Integer axes; Double/Int64/Unlimited/AtomicInt64/Weight/Mean storage | `Histogram` |
+| `unrooted.io.boost.load_efficiency` | Compatible 1D unweighted count histograms | `Histogram` |
 
----
+TH3, TProfile2D, direct TEfficiency objects, categorical/Boolean boost axes,
+WeightedMean, and weighted efficiencies are unsupported. Histogram storage
+can represent more dimensions than the plotting backends render. See the
+[I/O API](api/io.md) and [boost guide](user-guide/loading-boost.md).
+
+## Public plotting and composition
+
+Import `plot` and `overlay` from `unrooted.plot.mpl`,
+`unrooted.plot.plotly`, or `unrooted.plot.terminal`. Graphical backends also
+export `plot_scatter` and `overlay_scatter`.
+
+Matplotlib functions accept existing axes where documented. Its histogram
+overlay returns `(main_axes, ratio_axes)`; the second value is `None` when no
+ratio is requested. Plotly functions return figures; `plot_scatter` accepts
+an existing figure and optional subplot row/column. Terminal functions
+return text. Ratio panels are histogram-only, require identical bin edges,
+and propagate uncertainties assuming independent inputs.
+
+`HistogramStyle` controls one dataset. `StyleSet` combines a packaged palette
+with style templates. The [plotting guide](user-guide/plotting.md) and
+[API reference](api/plot.md) describe arguments and backend capabilities.
 
 ## Module map
 
-```
+```text
 unrooted/
-├── __init__.py
-│
-├── core/
-│   ├── axis.py            Axis dataclass (edges, label, centers, widths)
-│   └── histogram.py       Histogram dataclass (values, variances, spread)
-│
+├── _version.py          sole release version, read by Hatchling
+├── core/                axis, histogram, scatter, shared validation/statistics
 ├── io/
-│   ├── root/
-│   │   ├── reader.py      load()          → TH1 / TH2 / TProfile
-│   │   └── tree.py        load_branch()   → TTree branch(es) as histogram
-│   └── boost/
-│       └── reader.py      load()          → any bh.Histogram storage type
-│                          load_efficiency()→ accepted/total → efficiency
-│
-└── plot/
-    ├── style.py           HistogramStyle — per-histogram visual config
-    ├── style_set.py       StyleSet — coordinated 4-color palette from JSON
-    │
-    ├── mpl/               Matplotlib backend
-    │   ├── histogram.py   plot()   → matplotlib Axes
-    │   ├── overlay.py     overlay() + optional ratio panel
-    │   └── stylesheet.py  generate_stylesheet() — palette preview PNG
-    │
-    ├── plotly/            Plotly backend  (optional dep: plotly)
-    │   ├── _color.py      _to_rgba() — color normalisation helper
-    │   ├── histogram.py   plot()   → plotly Figure
-    │   └── overlay.py     overlay() + optional ratio panel
-    │
-    └── terminal/          Terminal backend  (stdlib + numpy only)
-        ├── _render.py     render() — core unicode rendering engine
-        └── histogram.py   plot() / overlay() → str
+│   ├── root/            object readers, chunked branch loading, sampling
+│   └── boost/           in-memory histogram conversion
+├── plot/
+│   ├── style.py         per-dataset appearance and named presets
+│   ├── style_set.py     packaged palettes and coordinated styles
+│   ├── mpl/             histogram/scatter rendering and stylesheet generation
+│   ├── plotly/          optional interactive histogram/scatter rendering
+│   └── terminal/        histogram text rendering
+├── cli/                 draw specifications, loading, validation, export
+└── resources/           odd/sd palettes, PNG/SVG logos, previews
 ```
 
----
-
-## Data flow
-
-The `Histogram` dataclass is the single currency that flows through the library.
-Both I/O backends produce the same type; all plot backends consume it.
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  I/O layer — ROOT backend                                                │
-│                                                                          │
-│  load("file.root", "hx")                 → Histogram (TH1/TH2)          │
-│  load("file.root", "profX")              → Histogram (TProfile)          │
-│  load_efficiency("file.root", "p", "t")  → Histogram (efficiency)        │
-│  load_branch("file.root", "t", "x")      → Histogram (count)             │
-│  load_branch("file.root", "t", "x", "y") → Histogram (profile)           │
-├──────────────────────────────────────────────────────────────────────────┤
-│  I/O layer — boost-histogram backend                                     │
-│                                                                          │
-│  load(bh_hist)                           → Histogram (any storage type)  │
-│  load_efficiency(accepted, total)         → Histogram (efficiency)        │
-└──────────────────────────┬───────────────────────────────────────────────┘
-                           │  Histogram(axes, values, variances, …)
-┌──────────────────────────▼───────────────────────────────────────────────┐
-│  Core data model                                                         │
-│                                                                          │
-│  Histogram                                                               │
-│    .axes       list[Axis]   — bin edges, label, centers, widths          │
-│    .values     ndarray      — bin counts or profile means                │
-│    .variances  ndarray      — Poisson counts or SE²                      │
-│    .overflow   ndarray|None — values with under/overflow bins            │
-│    .spread_min ndarray|None — per-bin min (profile / efficiency only)    │
-│    .spread_max ndarray|None — per-bin max (profile / efficiency only)    │
-└──────────┬──────────────────────────────┬────────────────────────┬───────┘
-           │                              │                        │
-           ▼                              ▼                        ▼
-┌──────────────────────┐   ┌─────────────────────────┐  ┌──────────────────┐
-│  plot.mpl            │   │  plot.plotly             │  │  plot.terminal   │
-│                      │   │                          │  │                  │
-│  plot()              │   │  plot()                  │  │  plot()          │
-│  overlay()           │   │  overlay()               │  │  overlay()       │
-│                      │   │                          │  │                  │
-│  → Axes              │   │  → go.Figure             │  │  → str           │
-│  (publication)       │   │  (interactive)           │  │  (headless)      │
-└──────────────────────┘   └─────────────────────────┘  └──────────────────┘
-```
-
----
-
-## Resource targets
-
-Each detector or experiment can have its own *resource target* — a directory
-under `unrooted/resources/` containing logos and a color palette. These assets
-are included in the installed package and read with `importlib.resources`:
-
-```
-unrooted/resources/
-├── odd/
-│   ├── odd_tech_light.png      full logo
-│   ├── odd_tech_light_line.png
-│   ├── colors.json             4-color palette
-│   └── stylesheet.png          auto-generated palette preview
-└── sd/
-    ├── super_duper.png
-    ├── super_duper_line.png
-    ├── colors.json
-    └── stylesheet.png
-```
-
-Adding a new target requires a `colors.json` with four hex codes; logo files
-(PNG/SVG) are optional.  `StyleSet.load()` and `generate_stylesheet()` work
-automatically once `colors.json` is present in the package. Generated previews
-default to `<target>_stylesheet.png` in the current working directory.
+Runtime resources are read with `importlib.resources`. Stylesheet generation
+writes to a caller-selected path or the current working directory. Adding a
+resource target requires a packaged `colors.json` containing four colors;
+logos are optional. See the [resource guide](user-guide/resources.md).

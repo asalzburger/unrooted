@@ -58,6 +58,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Contributing: contributing.md
+  - Releases & Compatibility: releasing.md
   - Architecture: architecture.md
   - User Guide:
     - Loading ROOT Data: user-guide/loading-root.md

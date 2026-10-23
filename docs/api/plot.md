@@ -1,6 +1,18 @@
 # Plot
 
-Style classes and plotting functions for both backends.
+Style classes and plotting functions for all three backends. Import functions
+from the backend package rather than its implementation modules.
+`HistogramStyle` and `StyleSet` are exported from `unrooted.plot`.
+
+| Backend package | Histograms | Point clouds | Return values |
+| --- | --- | --- | --- |
+| `unrooted.plot.mpl` | `plot`, `overlay` | `plot_scatter`, `overlay_scatter` | Axes; histogram overlay returns `(main, ratio)` |
+| `unrooted.plot.plotly` | `plot`, `overlay` | `plot_scatter`, `overlay_scatter` | Figure |
+| `unrooted.plot.terminal` | `plot`, `overlay` | Unsupported | str |
+
+See [composition examples](../user-guide/plotting.md) and the
+[CLI capability table](../user-guide/cli.md#backends). Plotly requires the
+`plotly` extra; static export also requires Kaleido and a compatible browser.
 
 ## HistogramStyle
 

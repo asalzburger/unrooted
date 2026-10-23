@@ -28,8 +28,8 @@ incompatible-bin ratios, invalid efficiency inputs, and CLI inconsistencies.
 | 3 | Data and statistical contracts are explicit and enforced | Complete |
 | 4 | CLI and plotting backends honor their public contracts | Complete |
 | 5 | Data loading has a tested resource envelope | Complete |
-| 6 | CI and contributor setup reproduce supported configurations | Complete locally |
-| 7 | A release candidate passes installation and documentation rehearsal | Next |
+| 6 | CI and contributor setup reproduce supported configurations | Complete |
+| 7 | A release candidate passes installation and documentation rehearsal | In validation |
 
 ## Stage 1 Installed distributions
 
@@ -288,22 +288,47 @@ Plotly-enabled smoke checks outside the checkout on Python 3.11 and 3.15.
 and CI covers the declared support matrix, installed artifacts, and key
 documentation examples.
 
+The quality, supported-platform, minimum-dependency, and distribution CI jobs
+passed on [PR 31](https://github.com/asalzburger/unrooted/pull/31), merged on
+October 22, 2026.
+
 ## Stage 7 Release candidate
 
-- [ ] Choose and add a license; complete package description, README, and
+- [x] Choose and add a license; complete package description, README, and
   maintainer metadata.
-- [ ] Establish one version source, a changelog, compatibility policy, and
+- [x] Establish one version source, a changelog, compatibility policy, and
   release instructions.
-- [ ] Finish the architecture and API references for `ScatterData`,
+- [x] Finish the architecture and API references for `ScatterData`,
   `load_scatter`, public plotting APIs, and the supported input types.
 - [ ] Rehearse installation and documented workflows from candidate artifacts
   on the supported configurations.
 - [ ] Inspect representative plots and generated documentation for layout,
   labels, uncertainty rendering, and broken links.
-- [ ] Add a release workflow that validates artifacts before publication.
+- [x] Add a release workflow that validates artifacts before publication.
 
-**Decision together:** choose the release version, license, support promise,
-and publication destination. Publication follows an explicit release request.
+**Decision on October 23, 2026:** the user accepted `0.1.0rc1`, MIT licensing,
+support for the CI-tested CPython 3.11–3.15 Linux/macOS configurations, and
+documented breaking changes in 0.x minor releases. GitHub Releases is the
+initial artifact destination; PyPI is deferred. Publication still follows an
+explicit release request. The [release guide](docs/releasing.md) defines the
+policy and rehearsal procedure.
+
+**Implementation:** Hatchling reads `unrooted/_version.py`; package metadata
+and the public version agree. The sdist carries the package, license, README,
+changelog, and build configuration. A candidate workflow validates a wheel
+built from that sdist and tests the installed wheel on the supported matrix
+and minimum stack. It retains distributions, checksums, release notes, and
+rendered documentation. A separate write-enabled job can prepare a draft
+only after those checks pass on an existing matching version tag. It never
+publishes automatically.
+
+**Local verification on October 23, 2026:** all 692 tests passed on Python
+3.11.17. Ruff, package Pyright, actionlint, strict MkDocs, generated local
+page/asset/fragment checks, and whitespace checks passed. Fresh runtime-only
+and Plotly wheel installations outside the checkout passed on macOS with
+Python 3.11.17 and 3.15.1. Both installed Plotly environments executed the
+12 introductory Python blocks and two CLI examples. Supported-platform CI
+and visual inspection are being completed before marking the stage complete.
 
 **Completion:** the candidate artifacts pass the agreed checks, user examples
 work from an installed package, documentation describes the actual behavior,
