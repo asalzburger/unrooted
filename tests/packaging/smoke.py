@@ -44,7 +44,13 @@ def main() -> None:
 
         from unrooted.io.root import load, load_efficiency, load_scatter
         from unrooted.plot import StyleSet
-        from unrooted.plot.mpl import generate_stylesheet, overlay, plot, plot_scatter
+        from unrooted.plot.mpl import (
+            generate_stylesheet,
+            overlay,
+            plot,
+            plot_scatter,
+            stack,
+        )
 
         resources = files("unrooted").joinpath("resources")
         for target, logo_stem in [("odd", "odd_tech_light"), ("sd", "super_duper")]:
@@ -94,6 +100,9 @@ def main() -> None:
         assert ax_ratio is not None
         ax_main.figure.savefig(workdir / "overlay.png")
         plt.close(ax_main.figure)
+        ax_stack = stack([h1, h2], labels=["A", "B"])
+        ax_stack.figure.savefig(workdir / "stack.png")
+        plt.close(ax_stack.figure)
 
         points = load_scatter(root_path, "tree", "x", "y")
         selected = load_scatter(
@@ -193,13 +202,17 @@ def main() -> None:
         else:
             from unrooted.plot.plotly import plot as plot_interactive
             from unrooted.plot.plotly import plot_scatter as plot_points_interactive
+            from unrooted.plot.plotly import stack as stack_interactive
 
             plot_interactive(h1).write_html(workdir / "api.html")
+            stack_interactive([h1, h2], labels=["A", "B"]).write_html(
+                workdir / "stack.html"
+            )
             plot_points_interactive(sampled).write_html(workdir / "scatter.html")
             run_cli(
                 *base_args, "--backend", "plotly", "--output", str(workdir / "cli.html")
             )
-            for name in ["api.html", "scatter.html", "cli.html"]:
+            for name in ["api.html", "scatter.html", "stack.html", "cli.html"]:
                 assert (workdir / name).stat().st_size > 0
         for target in ["odd", "sd"]:
             args = [*base_args, "--palette", target]
@@ -207,7 +220,7 @@ def main() -> None:
             run_cli(*args, "--output", str(output))
             assert output.stat().st_size > 0
 
-        for name in ["api.png", "overlay.png", "scatter.png"]:
+        for name in ["api.png", "overlay.png", "scatter.png", "stack.png"]:
             assert (workdir / name).stat().st_size > 0
 
     print("Installed wheel smoke checks passed: palettes, assets, API, and CLI.")

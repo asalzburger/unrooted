@@ -60,6 +60,7 @@ ROOT readers use Uproot, and boost readers convert in-memory boost-histogram obj
 - `style_set.StyleSet` — loads packaged `unrooted/resources/{target}/colors.json` through `importlib.resources` and combines four palette colors with four `_STYLE_TEMPLATES` (line style + marker combinations) into a ready-to-use `styles` list; index wraps cyclically
 - `mpl/histogram.plot()` — dispatches to `_plot_1d`, `_plot_1d_styled`, or `_plot_2d`; `_plot_1d_styled` renders in five ordered layers: fill → line → markers → errors → spread
 - `mpl/overlay.overlay()` — multi-histogram overlay with optional ratio panel
+- `mpl.stack()` / `plotly.stack()` — nonnegative additive 1D stacks with shared validation/accumulation in `_stack.py` and an independent total uncertainty band
 - `mpl.plot_scatter()` / `mpl.overlay_scatter()` — public point-cloud plotting and composition
 - `mpl/_range._draw_range()` — shared primitive for both error bars and filled bands, used by both the histogram and overlay modules
 - `mpl/stylesheet.generate_stylesheet()` — renders a palette preview PNG; called as part of resource updates

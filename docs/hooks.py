@@ -8,6 +8,7 @@ The build fails (raises RuntimeError) if any generation step errors out.
 from __future__ import annotations
 
 from pathlib import Path
+from runpy import run_path
 from tempfile import TemporaryDirectory
 
 from mkdocs.structure.files import File
@@ -35,6 +36,7 @@ def on_pre_build(config, **kwargs) -> None:  # noqa: ANN001
         ("efficiency examples", _gen_efficiency),
         ("style preset examples", _gen_style_presets),
         ("boost-histogram examples", _gen_boost),
+        ("stacked histogram examples", _gen_stack),
     ]:
         try:
             fn()
@@ -77,6 +79,13 @@ def on_post_build(**kwargs):
 def on_build_error(**kwargs):
     if _TEMP is not None:
         _TEMP.cleanup()
+
+
+def _gen_stack() -> None:
+    example = run_path(str(
+        _PROJECT_ROOT / "tests" / "examples" / "example_stacked_histogram.py"
+    ))
+    example["render"](_OUT, include_plotly=True)
 
 
 def _gen_mpl() -> None:

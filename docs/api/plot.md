@@ -6,8 +6,8 @@ from the backend package rather than its implementation modules.
 
 | Backend package | Histograms | Point clouds | Return values |
 | --- | --- | --- | --- |
-| `unrooted.plot.mpl` | `plot`, `overlay` | `plot_scatter`, `overlay_scatter` | Axes; histogram overlay returns `(main, ratio)` |
-| `unrooted.plot.plotly` | `plot`, `overlay` | `plot_scatter`, `overlay_scatter` | Figure |
+| `unrooted.plot.mpl` | `plot`, `overlay`, `stack` | `plot_scatter`, `overlay_scatter` | Axes; histogram overlay returns `(main, ratio)` |
+| `unrooted.plot.plotly` | `plot`, `overlay`, `stack` | `plot_scatter`, `overlay_scatter` | Figure |
 | `unrooted.plot.terminal` | `plot`, `overlay` | Unsupported | str |
 
 See [composition examples](../user-guide/plotting.md) and the
@@ -41,6 +41,14 @@ See [composition examples](../user-guide/plotting.md) and the
       heading_level: 3
       heading: overlay
       toc_label: overlay
+
+<span id="stack"></span>
+
+::: unrooted.plot.mpl.stack.stack
+    options:
+      heading_level: 3
+      heading: stack
+      toc_label: stack
 
 <span id="plot_scatter"></span>
 
@@ -89,6 +97,14 @@ Exported as `unrooted.plot.mpl.overlay_scatter`.
       heading_level: 3
       heading: overlay
       toc_label: overlay
+
+<span id="stack_1"></span>
+
+::: unrooted.plot.plotly.stack.stack
+    options:
+      heading_level: 3
+      heading: stack
+      toc_label: stack
 
 <span id="plot_scatter_1"></span>
 
